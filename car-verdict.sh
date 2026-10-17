@@ -150,6 +150,23 @@ if step real "real apps (Waze in the map slot)"; then
     fi
 fi
 
+# Frame rate with the same instrument CarPlay gets measured with (fps-probe.sh): scripted swipes on
+# the map, SurfaceFlinger present times. "DriveDeck" = what reaches the screen; "Waze" = what Waze draws.
+if step fps "frame rate: DriveDeck + Waze, 30 s of scripted map swipes"; then
+    stop_drivedeck
+    adb -s "$D" shell am start -n dev.drivedeck/.MainActivity >/dev/null
+    adb -s "$D" shell 'sleep 15'
+    top=$(top_of_main)
+    case "$top" in
+        dev.drivedeck/*)
+            ./fps-probe.sh run drivedeck 30 > "$OUT/fps-drivedeck.txt" 2>&1
+            col() { grep -m1 "$1" "$OUT/fps-drivedeck.txt" | awk '{print $(NF-6)" fps, p95 "$(NF-4)" ms, max "$(NF-3)" ms"}'; }
+            record fps INFO "on screen (DriveDeck layer): $(col '^dev.drivedeck/'); Waze map: $(col '^SurfaceView - com.waze'); table $OUT/fps-drivedeck.txt"
+            ;;
+        *) record fps INVALID "DriveDeck not on top of the main display ($top is)" ;;
+    esac
+fi
+
 if step gps "GPS: Waze location permission, location mode, last fix"; then
     perm=$(adb -s "$D" shell dumpsys package com.waze | grep -m1 'ACCESS_FINE_LOCATION: granted' | sed 's/^ *//')
     mode=$(adb -s "$D" shell settings get secure location_mode)

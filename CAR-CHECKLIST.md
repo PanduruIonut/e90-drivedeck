@@ -80,3 +80,24 @@ Limită cunoscută: judecătorul măsoară doar acoperirea. Pe emulator, `textur
 e întinsă, deci la mașină trebuie să ne uităm și la captură.
 
 **Următoarea sesiune: `./car-verdict.sh --fresh`** (sesiunea veche are pasul `install` marcat cu APK-ul vechi).
+
+## DriveDeck vs CarPlay: care e mai rapid (măsurat, nu estimat)
+
+Același instrument pentru amândouă: `fps-probe.sh` glisează harta identic și citește din SurfaceFlinger
+momentul afișării fiecărui cadru. DriveDeck se măsoară singur, în `car-verdict.sh` (pasul `fps`). CarPlay:
+
+1. Pornește CarPlay (**cu cablu, dacă se poate**: wireless poate muta Wi-Fi-ul navigației și se pierde ADB-ul;
+   sonda merge mai departe oricum, doar rezultatele le iau mai târziu). Deschide **Waze în CarPlay**, pe hartă,
+   fără traseu (la fel ca în DriveDeck).
+2. Eu rulez `./fps-probe.sh start carplay 60 20`: ai 20 s să ajungi pe hartă, apoi 60 s de glisări.
+   Nu atinge ecranul în timpul ăsta. Sonda glisează doar când focusul e pe CarPlay, altfel sare și notează.
+3. Când ADB-ul e din nou disponibil: `./fps-probe.sh pull carplay`. Compar stratul video CarPlay cu stratul
+   DriveDeck din pasul `fps`.
+
+**Atingere → reacție (filmuleț slow-motion).** iPhone: Camera → **Slo-mo 240 fps**, telefonul fix, cu ecranul
+navigației și degetul în cadru. Cu harta Waze deschisă: **5 atingeri** pe butonul de căutare („Where to?”),
+cu o pauză între ele. O dată în DriveDeck, o dată în CarPlay. Trimite-mi clipurile pe Mac (AirDrop). Eu număr
+cadrele dintre atingere și prima schimbare pe ecran (1 cadru = 4,2 ms).
+
+**Contact → hartă utilizabilă.** Filmuleț normal, din momentul în care pui contactul până când harta Waze
+răspunde la atingere. O dată cu DriveDeck ca Home, o dată cu CarPlay.
