@@ -23,6 +23,8 @@
 5. Cont Google pe navigație → **Play Store: Settings → Auto-update apps → Don't auto-update** →
    instalează **Waze** → login **YouTube** (Premium).
 6. Pornește ceva în **Spotify** și în **YouTube** → verific ce primește cardul Now Playing.
+   Apoi atinge **coperta Spotify** în Now Playing → biblioteca se deschide peste hartă → prima dată
+   Spotify cere **autorizare** pentru DriveDeck (o singură dată) → alege un playlist.
 7. Apasă Home → **DriveDeck** → întâi **„Just once”**. Dacă merge bine → **„Always”**.
 8. Dacă se pierde conexiunea: reconectează Wi-Fi-ul navigației, rulează din nou `./connect.sh`
    (descarcă jurnalul cu motivul deconectării).
