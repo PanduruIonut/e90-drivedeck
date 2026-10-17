@@ -34,6 +34,8 @@ public class MainActivity extends Activity {
     static final String TAG = "DriveDeck";
     /** --ez activityview true: use the stock ActivityView instead of our TextureView embedder (for comparison). */
     static boolean useActivityView;
+    /** --ef testwidth 0.5: squeeze the embedded app to half the slot (negative control for the pixel judge). */
+    static float testWidth = 1f;
 
     private static final String PREFS = "drivedeck";
     private static final String KEY_MUSIC = "music_source";
@@ -77,6 +79,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         useActivityView = getIntent().getBooleanExtra("activityview", false);
         EmbeddedDisplayView.scale = getIntent().getFloatExtra("vdscale", 1f);
+        testWidth = getIntent().getFloatExtra("testwidth", 1f);
         String navPkg = extraOr("left", Apps.WAZE);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         musicSource = initialMusicSource();

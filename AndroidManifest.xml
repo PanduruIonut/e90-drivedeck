@@ -21,6 +21,9 @@
     <!-- Only one music app at a time: the tab you leave is paused and then force-stopped. -->
     <uses-permission android:name="android.permission.FORCE_STOP_PACKAGES" />
 
+    <!-- SurfaceFlinger debug switch (HW overlays) for the car diagnosis, see DebugReceiver. -->
+    <uses-permission android:name="android.permission.HARDWARE_TEST" />
+
     <!-- Speed comes from the head unit's own GPS. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Dock shows Wi-Fi / 4G / offline. -->
@@ -49,6 +52,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <!-- Car-session test hook (toggle HW overlays). Only adb/system hold DUMP, so other apps can't call it. -->
+        <receiver
+            android:name=".DebugReceiver"
+            android:permission="android.permission.DUMP"
+            android:exported="true" />
 
         <!-- Reads Waze's turn-by-turn notification and finds Spotify's media session
              for the fallback cards. The owner enables it in notification access. -->

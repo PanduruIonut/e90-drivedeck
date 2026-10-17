@@ -14,9 +14,12 @@
 1. **Motorul pornit** (sesiune de 30–45 min, bateria). Frână de mână, **nu** în marșarier.
 2. Navigație: Wi-Fi → hotspot-ul iPhone. **AutoLink oprit.** ADB pornit (Developer options).
 3. Mac pe hotspot → `./connect.sh` → scrie-mi „conectat”.
-4. Eu rulez `./car-test.sh "$(cut -d: -f1 .unit)"`:
-   - **testul decisiv:** noua fereastră (TextureView) umple cardul? Comparație automată cu varianta veche;
-   - dacă nu: încerc pe loc `--ef vdscale 0.6667` și alte valori, fără recompilare.
+4. Eu rulez `./car-verdict.sh` (reluabil: dacă pică Wi-Fi-ul → `./connect.sh` → din nou `./car-verdict.sh`):
+   - `activityview`: varianta veche, **trebuie să pice** (FAIL ~0,5). Dovedește că judecătorul vede problema;
+   - `hwc_off`: aceeași, cu compunerea hardware oprită. **PASS = cauza e compozitorul hardware**;
+   - `texture`: **testul decisiv**, noua fereastră trebuie să dea PASS;
+   - `vdscale`: doar dacă `texture` pică, încearcă alte dimensiuni ale ecranului virtual;
+   - verdictul complet e în `shots/<sesiune>/verdict.md`, cu capturi și dump-uri SurfaceFlinger.
 5. Cont Google pe navigație → **Play Store: Settings → Auto-update apps → Don't auto-update** →
    instalează **Waze** → login **YouTube** (Premium).
 6. Pornește ceva în **Spotify** și în **YouTube** → verific ce primește cardul Now Playing.

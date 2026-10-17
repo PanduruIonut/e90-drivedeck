@@ -203,6 +203,41 @@ final class AppSlot extends FrameLayout {
                 Gravity.TOP | Gravity.END));
     }
 
+    private String lastRect;
+
+    /**
+     * Logs the slot's on-screen rectangle (logical px) for the pixel judge, and in test mode
+     * (--ef testwidth 0.5) squeezes the embedded view to a fraction of the slot to imitate the
+     * half-width bug, so the judge can be shown to fail on it.
+     */
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        int[] at = new int[2];
+        getLocationOnScreen(at);
+        String rect = at[0] + " " + at[1] + " " + (at[0] + getWidth()) + " " + (at[1] + getHeight());
+        if (!rect.equals(lastRect)) {
+            lastRect = rect;
+            Log.i(MainActivity.TAG, "slot-rect " + label + " " + rect);
+        }
+        View embedded = textureView != null ? textureView : activityView;
+        if (embedded != null && MainActivity.testWidth < 1f) {
+            final View v = embedded;
+            final int want = Math.round(getWidth() * MainActivity.testWidth);
+            if (v.getLayoutParams().width != want) {
+                post(new Runnable() {
+                    @Override
+                    public void run() {
+                        LayoutParams lp = (LayoutParams) v.getLayoutParams();
+                        lp.width = want;
+                        lp.gravity = Gravity.TOP | Gravity.START;
+                        v.setLayoutParams(lp);
+                    }
+                });
+            }
+        }
+    }
+
     void release() {
         if (textureView != null) {
             textureView.release();
