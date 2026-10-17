@@ -107,14 +107,14 @@ final class AppSlot extends FrameLayout {
             Log.i(MainActivity.TAG, pkg + ": ActivityView created");
         } catch (Throwable t) {
             Log.w(MainActivity.TAG, "ActivityView unavailable", t);
-            showFallback("încorporare indisponibilă: " + t.getClass().getSimpleName());
+            showFallback("embedding unavailable: " + t.getClass().getSimpleName());
         }
     }
 
     private void startInside() {
         if (fellBack) return;
         if (launch == null) {
-            notice.setText(label + " nu e instalat");
+            notice.setText(label + " is not installed");
             notice.setVisibility(VISIBLE);
             return;
         }
@@ -133,7 +133,7 @@ final class AppSlot extends FrameLayout {
             post(new Runnable() {
                 @Override
                 public void run() {
-                    showFallback("pornire eșuată: " + t.getClass().getSimpleName());
+                    showFallback("could not start: " + t.getClass().getSimpleName());
                 }
             });
         }
@@ -226,7 +226,7 @@ final class AppSlot extends FrameLayout {
         TextView expand = Ui.button(getContext(), "⤢");
         expand.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22);
         expand.setTextColor(Ui.MUTED);
-        expand.setContentDescription("Deschide pe tot ecranul");
+        expand.setContentDescription("Open full screen");
         expand.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {

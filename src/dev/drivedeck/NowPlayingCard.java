@@ -213,8 +213,8 @@ final class NowPlayingCard extends LinearLayout {
         MediaMetadata md = controller == null ? null : controller.getMetadata();
         if (md == null) {
             art.setImageBitmap(null);
-            title.setText("Nimic nu rulează");
-            artist.setText("Atinge ca să deschizi " + Apps.label(source));
+            title.setText("Nothing playing");
+            artist.setText("Tap to open " + Apps.label(source));
             playPause.setText("▶");
             updateProgress();
             return;

@@ -36,7 +36,6 @@ public class MainActivity extends Activity {
     private static final String PREFS = "drivedeck";
     private static final String KEY_MUSIC = "music_source";
 
-    private static final Locale RO = new Locale("ro", "RO");
 
     private TextView outside;
     private TextView outsideUnit;
@@ -44,14 +43,13 @@ public class MainActivity extends Activity {
     private TextView month;
     private AppSlot navSlot;
 
-    /** The unit's locale is English; the date card is always Romanian ("vin. 17" / "octombrie"). */
+    /** The date card, in English whatever the unit's locale: "Sat 17" / "October". */
     private final Runnable dateTick = new Runnable() {
         @Override
         public void run() {
             Date now = new Date();
-            String d = new SimpleDateFormat("EEE d", RO).format(now);
-            day.setText(d.substring(0, 1).toUpperCase(RO) + d.substring(1));
-            month.setText(new SimpleDateFormat("LLLL", RO).format(now));
+            day.setText(new SimpleDateFormat("EEE d", Locale.ENGLISH).format(now));
+            month.setText(new SimpleDateFormat("LLLL", Locale.ENGLISH).format(now));
             day.postDelayed(this, 60_000);
         }
     };
@@ -144,7 +142,7 @@ public class MainActivity extends Activity {
         col.addView(nowPlaying, npLp);
 
         LinearLayout small = new LinearLayout(this);
-        LinearLayout tempCard = smallCard("Afară");
+        LinearLayout tempCard = smallCard("Outside");
         outside = Ui.text(this, 44, Ui.TEXT, true);
         outside.setText("—");
         outside.setPadding(0, Ui.dp(this, 4), 0, 0);
@@ -156,7 +154,7 @@ public class MainActivity extends Activity {
         tLp.rightMargin = gap;
         small.addView(tempCard, tLp);
 
-        LinearLayout dateCard = smallCard("Azi");
+        LinearLayout dateCard = smallCard("Today");
         day = Ui.text(this, 32, Ui.TEXT, true);
         day.setPadding(0, Ui.dp(this, 8), 0, 0);
         dateCard.addView(day);

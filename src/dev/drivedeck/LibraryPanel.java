@@ -98,19 +98,19 @@ final class LibraryPanel extends LinearLayout {
         path.clear();
         back.setVisibility(GONE);
         title.setText("Spotify");
-        showStatus("Se conectează la Spotify…");
+        showStatus("Connecting to Spotify…");
         spotify.connect(getContext(), new SpotifyLibrary.Status() {
             @Override public void onConnected() {
                 post(new Runnable() { @Override public void run() { loadRoots(); } });
             }
             @Override public void onFailure(final String why) {
-                post(new Runnable() { @Override public void run() { showStatus("Nu merge conexiunea: " + why); } });
+                post(new Runnable() { @Override public void run() { showStatus(why); } });
             }
         });
     }
 
     private void loadRoots() {
-        showStatus("Se încarcă…");
+        showStatus("Loading…");
         spotify.recommended(new SpotifyLibrary.Callback<ListItem[]>() {
             @Override public void onResult(final ListItem[] items) {
                 post(new Runnable() { @Override public void run() { setRoots(items); } });
@@ -134,7 +134,7 @@ final class LibraryPanel extends LinearLayout {
             lp.rightMargin = Ui.dp(getContext(), 8);
             categories.addView(chip, lp);
         }
-        if (items.length == 0) showStatus("Spotify n-a trimis nimic pentru mașină");
+        if (items.length == 0) showStatus("Spotify returned nothing for the car");
         else selectRoot(0);
     }
 
@@ -154,7 +154,7 @@ final class LibraryPanel extends LinearLayout {
     }
 
     private void openItem(ListItem item) {
-        showStatus("Se încarcă…");
+        showStatus("Loading…");
         spotify.children(item, new SpotifyLibrary.Callback<ListItem[]>() {
             @Override public void onResult(final ListItem[] items) {
                 post(new Runnable() { @Override public void run() { showTiles(items); } });
@@ -176,7 +176,7 @@ final class LibraryPanel extends LinearLayout {
     private void showTiles(ListItem[] items) {
         grid.removeAllViews();
         status.setVisibility(items.length == 0 ? VISIBLE : GONE);
-        if (items.length == 0) status.setText("Gol");
+        if (items.length == 0) status.setText("Empty");
         int gap = Ui.dp(getContext(), 10);
         int tileW = (getWidth() - getPaddingLeft() - getPaddingRight() - gap * (COLUMNS - 1)) / COLUMNS;
         if (tileW <= 0) tileW = Ui.dp(getContext(), 150);

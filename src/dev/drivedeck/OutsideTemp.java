@@ -13,7 +13,7 @@ final class OutsideTemp {
     static final String PROPERTY = "forfan.user.info";
     private static final Pattern READING = Pattern.compile("(-?\\d+(?:[.,]\\d+)?)\\s*(℉|°?\\s*F)?");
 
-    /** With a Romanian decimal comma: "14,5". */
+    /** With a decimal point: "14.5". */
     final String value;
     /** "°C" or "°F". */
     final String unit;
@@ -32,7 +32,7 @@ final class OutsideTemp {
         if (s == null) return null;
         Matcher m = READING.matcher(s);
         if (!m.find()) return null;
-        return new OutsideTemp(m.group(1).replace('.', ','), m.group(2) != null ? "°F" : "°C");
+        return new OutsideTemp(m.group(1).replace(',', '.'), m.group(2) != null ? "°F" : "°C");
     }
 
     private static String systemProperty(String key) {

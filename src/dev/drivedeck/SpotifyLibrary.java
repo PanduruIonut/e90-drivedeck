@@ -40,7 +40,7 @@ final class SpotifyLibrary {
     void connect(Context c, final Status status) {
         if (isConnected()) { status.onConnected(); return; }
         if (connecting) return;
-        if (!SpotifyAppRemote.isSpotifyInstalled(c)) { status.onFailure("Spotify nu e instalat"); return; }
+        if (!SpotifyAppRemote.isSpotifyInstalled(c)) { status.onFailure("Spotify is not installed"); return; }
         connecting = true;
         ConnectionParams params = new ConnectionParams.Builder(SpotifyConfig.CLIENT_ID)
                 .setRedirectUri(SpotifyConfig.REDIRECT_URI)
@@ -59,9 +59,24 @@ final class SpotifyLibrary {
             public void onFailure(Throwable t) {
                 connecting = false;
                 Log.w(MainActivity.TAG, "spotify: connect failed", t);
-                status.onFailure(t.getClass().getSimpleName() + ": " + t.getMessage());
+                status.onFailure(explain(t));
             }
         });
+    }
+
+    /** What to tell the driver; the raw exception stays in the log. */
+    private static String explain(Throwable t) {
+        switch (t.getClass().getSimpleName()) {
+            case "NotLoggedInException": return "Log in to Spotify on this unit, then try again";
+            case "UserNotAuthorizedException": return "Allow DriveDeck in Spotify, then try again";
+            case "AuthenticationFailedException": return "Spotify refused DriveDeck: check its Spotify developer settings";
+            case "CouldNotFindSpotifyApp": return "Spotify is not installed";
+            case "OfflineModeException": return "Spotify is in offline mode";
+            case "UnsupportedFeatureVersionException": return "This Spotify version is too old";
+            case "SpotifyConnectionTerminatedException":
+            case "SpotifyDisconnectedException": return "Spotify disconnected: close this and open it again";
+            default: return "Can't connect to Spotify";
+        }
     }
 
     void disconnect() {

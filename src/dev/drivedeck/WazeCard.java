@@ -69,14 +69,14 @@ final class WazeCard extends LinearLayout implements DeckNotificationListener.Ob
         if (!DeckNotificationListener.connected) {
             arrow.setImageDrawable(null);
             title.setText("Waze");
-            detail.setText("Atinge ca să permiți accesul la notificări");
+            detail.setText("Tap to allow notification access");
             return;
         }
         CharSequence t = DeckNotificationListener.wazeTitle;
         if (t == null) {
             arrow.setImageDrawable(null);
             title.setText("Waze");
-            detail.setText("Fără navigare activă. Atinge ca să deschizi Waze.");
+            detail.setText("No active route. Tap to open Waze.");
             return;
         }
         arrow.setImageDrawable(DeckNotificationListener.wazeIcon);

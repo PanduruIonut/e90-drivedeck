@@ -102,7 +102,7 @@ final class Dock extends LinearLayout {
             box.addView(img, new FrameLayout.LayoutParams(
                     LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         }
-        box.setContentDescription(home ? "Toate aplicațiile" : Apps.label(pkg));
+        box.setContentDescription(home ? "All apps" : Apps.label(pkg));
         box.setOnClickListener(click);
         return box;
     }
