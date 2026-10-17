@@ -17,8 +17,10 @@
 4. Eu rulez `./car-verdict.sh` (reluabil: dacă pică Wi-Fi-ul → `./connect.sh` → din nou `./car-verdict.sh`):
    - `activityview`: varianta veche, **trebuie să pice** (FAIL ~0,5). Dovedește că judecătorul vede problema;
    - `hwc_off`: aceeași, cu compunerea hardware oprită. **PASS = cauza e compozitorul hardware**;
-   - `texture`: **testul decisiv**, noua fereastră trebuie să dea PASS;
-   - `vdscale`: doar dacă `texture` pică, încearcă alte dimensiuni ale ecranului virtual;
+   - `texture`: noua fereastră **fără** corecția vdfix, se așteaptă FAIL (~lățime/1920);
+   - `texture_fix`: **testul decisiv**, cu vdfix: trebuie PASS și imaginea nedeformată;
+   - `vdscale`: doar dacă ambele pică, încearcă alte dimensiuni ale ecranului virtual;
+   - `gps`: permisiunea de locație a Waze și ultimul fix GPS;
    - verdictul complet e în `shots/<sesiune>/verdict.md`, cu capturi și dump-uri SurfaceFlinger.
 5. Cont Google pe navigație → **Play Store: Settings → Auto-update apps → Don't auto-update** →
    instalează **Waze** → login **YouTube** (Premium).

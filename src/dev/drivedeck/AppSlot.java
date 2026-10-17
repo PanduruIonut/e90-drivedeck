@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.util.TypedValue;
 
 /**
  * One area of the dashboard that hosts a real app (Waze, Spotify, YouTube…) through the
@@ -189,7 +190,7 @@ final class AppSlot extends FrameLayout {
 
     private void addExpandButton() {
         TextView expand = Ui.button(getContext(), "⤢");
-        expand.setTextSize(22);
+        expand.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22);
         expand.setTextColor(Ui.MUTED);
         expand.setContentDescription("Deschide pe tot ecranul");
         expand.setOnClickListener(new OnClickListener() {

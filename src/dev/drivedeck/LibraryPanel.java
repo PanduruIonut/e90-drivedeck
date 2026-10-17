@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.util.TypedValue;
 
 import com.spotify.protocol.types.ListItem;
 
@@ -54,7 +55,7 @@ final class LibraryPanel extends LinearLayout {
         LinearLayout header = new LinearLayout(c);
         header.setGravity(Gravity.CENTER_VERTICAL);
         back = Ui.button(c, "‹");
-        back.setTextSize(30);
+        back.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 30);
         back.setVisibility(GONE);
         back.setOnClickListener(new OnClickListener() {
             @Override public void onClick(View v) { goBack(); }
@@ -64,7 +65,7 @@ final class LibraryPanel extends LinearLayout {
         title.setText("Spotify");
         header.addView(title, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
         TextView close = Ui.button(c, "✕");
-        close.setTextSize(22);
+        close.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22);
         close.setTextColor(Ui.MUTED);
         close.setOnClickListener(new OnClickListener() {
             @Override public void onClick(View v) { LibraryPanel.this.listener.onClose(); }

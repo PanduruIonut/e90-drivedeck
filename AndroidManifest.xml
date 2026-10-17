@@ -38,7 +38,7 @@
             android:name=".MainActivity"
             android:screenOrientation="landscape"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"
-            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout|fontScale|uiMode|locale|layoutDirection|keyboard|navigation|touchscreen|mcc|mnc|colorMode"
             android:launchMode="singleTask"
             android:exported="true">
             <intent-filter>

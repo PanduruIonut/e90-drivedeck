@@ -15,6 +15,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.util.TypedValue;
 
 import java.util.List;
 
@@ -111,7 +112,7 @@ final class NowPlayingCard extends LinearLayout {
         TextView prev = Ui.button(c, "⏮");
         playPause = Ui.button(c, "▶");
         playPause.setTextColor(Ui.BG);
-        playPause.setTextSize(24);
+        playPause.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 24);
         GradientDrawable circle = new GradientDrawable();
         circle.setShape(GradientDrawable.OVAL);
         circle.setColor(Ui.TEXT);

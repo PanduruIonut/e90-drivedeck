@@ -6,6 +6,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.widget.TextView;
+import android.util.TypedValue;
 
 /**
  * Colours and view helpers. Palette and sizes follow design/a-dashboard.html (CarPlay-like,
@@ -39,9 +40,13 @@ final class Ui {
         return d;
     }
 
-    static TextView text(Context c, float sp, int color, boolean bold) {
+    /**
+     * Sizes are in dp, not sp: the dashboard is a fixed canvas for one screen, and the unit runs
+     * font_scale=1.2, which clipped the speed and date cards. Embedded apps still get the system scale.
+     */
+    static TextView text(Context c, float dp, int color, boolean bold) {
         TextView t = new TextView(c);
-        t.setTextSize(sp);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_DIP, dp);
         t.setTextColor(color);
         t.setIncludeFontPadding(false);
         if (bold) t.setTypeface(medium());

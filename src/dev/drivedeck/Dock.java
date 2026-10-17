@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
 import android.widget.TextView;
+import android.util.TypedValue;
 
 /** CarPlay-style left dock: time, connection, home and the four app icons. */
 final class Dock extends LinearLayout {
@@ -40,7 +41,7 @@ final class Dock extends LinearLayout {
         TextClock time = new TextClock(c);
         time.setFormat24Hour("HH:mm");
         time.setFormat12Hour("HH:mm");
-        time.setTextSize(21);
+        time.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 21);
         time.setTextColor(Ui.TEXT);
         time.setTypeface(Ui.medium());
         time.setGravity(Gravity.CENTER);
