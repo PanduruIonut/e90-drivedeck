@@ -34,6 +34,8 @@ final class NowPlayingCard extends LinearLayout {
     private final TextView playPause;
     private MediaSessionManager sessions;
     private MediaController controller;
+    /** For Spotify, tapping the cover/title opens our library screen instead of the Spotify app. */
+    Runnable libraryOpener;
 
     private final MediaSessionManager.OnActiveSessionsChangedListener sessionsChanged =
             new MediaSessionManager.OnActiveSessionsChangedListener() {
@@ -123,7 +125,10 @@ final class NowPlayingCard extends LinearLayout {
         addView(controls, cLp);
 
         OnClickListener open = new OnClickListener() {
-            @Override public void onClick(View v) { Apps.openFullScreen(getContext(), source); }
+            @Override public void onClick(View v) {
+                if (Apps.SPOTIFY.equals(source) && libraryOpener != null) libraryOpener.run();
+                else Apps.openFullScreen(getContext(), source);
+            }
         };
         art.setOnClickListener(open);
         meta.setOnClickListener(open);

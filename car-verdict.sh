@@ -125,5 +125,17 @@ if step temp "outside temperature source"; then
     record temp INFO "$(wc -l < "$OUT/temp.txt" | tr -d ' ') candidate lines ($OUT/temp.txt)"
 fi
 
+if step pull_apps "copy the Spotify/Waze/YouTube APKs for testing at home on the emulator"; then
+    got=""
+    for p in com.spotify.music com.waze com.google.android.youtube; do
+        paths=$(adb -s "$D" shell pm path "$p" 2>/dev/null | sed 's/^package://' | tr -d '\r')
+        [ -n "$paths" ] || continue
+        mkdir -p "thirdparty/$p"
+        for f in $paths; do adb -s "$D" pull "$f" "thirdparty/$p/" >/dev/null; done
+        got="$got $p($(ls "thirdparty/$p" | wc -l | tr -d ' ') apk)"
+    done
+    record pull_apps INFO "${got:-nothing installed yet} → thirdparty/ (emulator: adb install-multiple thirdparty/<pkg>/*.apk)"
+fi
+
 echo
 cat "$V"

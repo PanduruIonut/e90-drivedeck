@@ -3,3 +3,6 @@ thirdparty/*.apk
 .DS_Store
 .unit
 .verdict/
+spotify-client-id.txt
+libs/appremote/
+thirdparty/com.*/

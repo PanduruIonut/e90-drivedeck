@@ -16,6 +16,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -59,6 +60,8 @@ public class MainActivity extends Activity {
         }
     };
     private NowPlayingCard nowPlaying;
+    private final SpotifyLibrary spotify = new SpotifyLibrary();
+    private LibraryPanel library;
     private Dock dock;
     private String musicSource;
     private SharedPreferences prefs;
@@ -99,9 +102,17 @@ public class MainActivity extends Activity {
         navSlot = new AppSlot(this, navPkg, "Waze", false, new AppSlot.Fallback() {
             @Override public View create(Context c) { return new WazeCard(c); }
         });
+        // Map card: Waze, with the Spotify library sliding over it when opened.
+        FrameLayout mapArea = new FrameLayout(this);
+        mapArea.addView(navSlot, LibraryPanel.fill());
+        library = new LibraryPanel(this, spotify, new LibraryPanel.Listener() {
+            @Override public void onClose() { library.setVisibility(View.GONE); }
+        });
+        library.setVisibility(View.GONE);
+        mapArea.addView(library, LibraryPanel.fill());
         LinearLayout.LayoutParams navLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.75f);
         navLp.rightMargin = gap;
-        root.addView(navSlot, navLp);
+        root.addView(mapArea, navLp);
 
         root.addView(sideColumn(gap), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
 
@@ -115,6 +126,12 @@ public class MainActivity extends Activity {
         col.setOrientation(LinearLayout.VERTICAL);
 
         nowPlaying = new NowPlayingCard(this, musicSource);
+        nowPlaying.libraryOpener = new Runnable() {
+            @Override public void run() {
+                library.setVisibility(View.VISIBLE);
+                library.open();
+            }
+        };
         LinearLayout.LayoutParams npLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
         npLp.bottomMargin = gap;
         col.addView(nowPlaying, npLp);
@@ -245,6 +262,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         day.removeCallbacks(dateTick);
+        spotify.disconnect();
         navSlot.release();
         super.onDestroy();
     }
