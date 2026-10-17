@@ -41,6 +41,9 @@ run_and_judge() {
     need_unit
     adb -s "$D" exec-out screencap -p > "$OUT/$tag.png"
     adb -s "$D" shell dumpsys SurfaceFlinger > "$OUT/$tag.sf.txt"
+    # If the HWC isn't the cause, these show how Android itself sized the slot's display and windows.
+    adb -s "$D" shell dumpsys display > "$OUT/$tag.display.txt"
+    adb -s "$D" shell dumpsys window windows > "$OUT/$tag.windows.txt"
     adb -s "$D" logcat -d -s 'DriveDeck:*' > "$OUT/$tag.log"
     local rect
     rect=$(grep 'slot-rect Waze' "$OUT/$tag.log" | tail -1 | sed 's/.*slot-rect Waze //')
