@@ -68,12 +68,48 @@ final class EmbeddedDisplayView extends TextureView implements TextureView.Surfa
         return Math.max(1, Math.round(px * scale));
     }
 
+    /** --ei vddpi N: virtual display density independent of its size (0 = follow the scale). */
+    static int dpiOverride = 0;
+
     private int dpi() {
+        if (dpiOverride > 0) return dpiOverride;
         return scaled(getResources().getDisplayMetrics().densityDpi);
+    }
+
+    /**
+     * The 825X_Pro head unit puts every virtual display's image into a frame the size of the main
+     * display (1920x720 logical): the app occupies only the top-left vdW x vdH of it, and that whole
+     * frame is then stretched into our view. Measured on the unit for five display sizes (width
+     * fraction = vdW/1920, height = vdH/720, density irrelevant). The fix scales the texture back by
+     * 1920/vdW and 720/vdH. Touch mapping is unchanged (content then lines up with the view again).
+     * On by default on that model only; --ez vdfix true|false overrides.
+     */
+    static Boolean vdFixOverride = null;
+
+    static boolean vdFixEnabled() {
+        if (vdFixOverride != null) return vdFixOverride;
+        return "825X_Pro".equals(android.os.Build.MODEL);
+    }
+
+    private void applyVdFix(int viewW, int viewH) {
+        if (!vdFixEnabled()) {
+            setTransform(null);
+            return;
+        }
+        android.graphics.Point main = new android.graphics.Point();
+        ((android.view.WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay().getRealSize(main);
+        float fx = (float) main.x / scaled(viewW);
+        float fy = (float) main.y / scaled(viewH);
+        Matrix m = new Matrix();
+        m.setScale(fx, fy);
+        setTransform(m);
+        Log.i(MainActivity.TAG, name + ": vdfix main " + main.x + "x" + main.y + " -> scale " + fx + " x " + fy);
     }
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture st, int w, int h) {
+        applyVdFix(w, h);
         st.setDefaultBufferSize(scaled(w), scaled(h));
         surface = new Surface(st);
         if (display == null) {
@@ -91,6 +127,7 @@ final class EmbeddedDisplayView extends TextureView implements TextureView.Surfa
 
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture st, int w, int h) {
+        applyVdFix(w, h);
         st.setDefaultBufferSize(scaled(w), scaled(h));
         if (display != null) display.resize(scaled(w), scaled(h), dpi());
     }

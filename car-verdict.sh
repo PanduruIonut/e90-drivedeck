@@ -83,13 +83,19 @@ if step hwc_off "stock ActivityView with HW overlays OFF (is the HWC the cause?)
     record hwc_off "${JUDGE%% *}" "${JUDGE#* }; during test: '$state' ($OUT/hwc_off.png)"
 fi
 
-if step texture "TextureView embedder (the fix)"; then
-    run_and_judge texture --es left com.android.settings
+if step texture "TextureView embedder without the vdfix (expected ~vdW/1920 wide on this unit)"; then
+    run_and_judge texture --es left com.android.settings --ez vdfix false
     record texture "${JUDGE%% *}" "${JUDGE#* } ($OUT/texture.png)"
 fi
 
+if step texture_fix "TextureView embedder WITH the vdfix (decisive: must PASS and look undistorted)"; then
+    run_and_judge texture_fix --es left com.android.settings --ez vdfix true
+    grep -o 'vdfix main .*' "$OUT/texture_fix.log" | tail -1 | sed 's/^/    /'
+    record texture_fix "${JUDGE%% *}" "${JUDGE#* } — check $OUT/texture_fix.png looks undistorted"
+fi
+
 if step vdscale "virtual display scale knob (only matters if texture failed)"; then
-    if grep -q '^| texture | PASS' "$V"; then
+    if grep -q -E "^\| texture(_fix)? \| PASS" "$V"; then
         record vdscale SKIP "texture passed"
     else
         best=""
@@ -112,6 +118,13 @@ if step real "real apps (Waze in the map slot)"; then
         adb -s "$D" shell 'sleep 8'; adb -s "$D" exec-out screencap -p > "$OUT/real.png"
         record real SKIP "Waze not installed yet ($OUT/real.png)"
     fi
+fi
+
+if step gps "GPS: Waze location permission, location mode, last fix"; then
+    perm=$(adb -s "$D" shell dumpsys package com.waze | grep -m1 'ACCESS_FINE_LOCATION: granted' | sed 's/^ *//')
+    mode=$(adb -s "$D" shell settings get secure location_mode)
+    fix=$(adb -s "$D" shell dumpsys location | grep -m1 -E 'gps: Location\[' | sed -E 's/.*(acc=[0-9.]+).*(et=[^ ]+).*/\1 \2/')
+    record gps INFO "waze: ${perm:-no fine-location grant}; location_mode=$mode (3=high accuracy); last gps fix: ${fix:-none}"
 fi
 
 if step media "media sessions for Now Playing"; then

@@ -82,6 +82,9 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         useActivityView = getIntent().getBooleanExtra("activityview", false);
         EmbeddedDisplayView.scale = getIntent().getFloatExtra("vdscale", 1f);
+        EmbeddedDisplayView.dpiOverride = getIntent().getIntExtra("vddpi", 0);
+        EmbeddedDisplayView.vdFixOverride = getIntent().hasExtra("vdfix")
+                ? getIntent().getBooleanExtra("vdfix", false) : null;
         testWidth = getIntent().getFloatExtra("testwidth", 1f);
         String navPkg = extraOr("left", Apps.WAZE);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
