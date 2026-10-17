@@ -1,16 +1,11 @@
 package dev.drivedeck;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -26,7 +21,7 @@ import java.util.Locale;
 
 /**
  * DriveDeck home screen, layout A (design/a-dashboard.png):
- *   dock | Waze, embedded | Now Playing + speed + date
+ *   dock | Waze, embedded | Now Playing + outside temperature + date
  *
  * Test with other apps in the map slot:
  *   adb shell am start -n dev.drivedeck/.MainActivity --es left com.android.settings
@@ -43,7 +38,8 @@ public class MainActivity extends Activity {
 
     private static final Locale RO = new Locale("ro", "RO");
 
-    private TextView speed;
+    private TextView outside;
+    private TextView outsideUnit;
     private TextView day;
     private TextView month;
     private AppSlot navSlot;
@@ -65,19 +61,19 @@ public class MainActivity extends Activity {
     private Dock dock;
     private String musicSource;
     private SharedPreferences prefs;
-    private LocationManager locations;
     /** The newest dashboard, and the one it replaces (see retirePrevious). */
     private static MainActivity current;
     private MainActivity previous;
 
-    private final LocationListener gps = new LocationListener() {
+    /** Waze shows the speed; this card shows the car's outside sensor (OutsideTemp). Polled while visible. */
+    private final Runnable tempTick = new Runnable() {
         @Override
-        public void onLocationChanged(Location l) {
-            if (l.hasSpeed()) speed.setText(String.valueOf(Math.round(l.getSpeed() * 3.6f)));
+        public void run() {
+            OutsideTemp t = OutsideTemp.read();
+            outside.setText(t == null ? "—" : t.value);
+            outsideUnit.setText(t == null ? "°C" : t.unit);
+            outside.postDelayed(this, 10_000);
         }
-        @Override public void onStatusChanged(String p, int s, Bundle b) {}
-        @Override public void onProviderEnabled(String p) {}
-        @Override public void onProviderDisabled(String p) { speed.setText("—"); }
     };
 
     @Override
@@ -148,17 +144,17 @@ public class MainActivity extends Activity {
         col.addView(nowPlaying, npLp);
 
         LinearLayout small = new LinearLayout(this);
-        LinearLayout speedCard = smallCard("Viteză");
-        speed = Ui.text(this, 44, Ui.TEXT, true);
-        speed.setText("—");
-        speed.setPadding(0, Ui.dp(this, 4), 0, 0);
-        speedCard.addView(speed);
-        TextView unit = Ui.text(this, 15, Ui.MUTED, false);
-        unit.setText("km/h");
-        speedCard.addView(unit);
-        LinearLayout.LayoutParams sLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
-        sLp.rightMargin = gap;
-        small.addView(speedCard, sLp);
+        LinearLayout tempCard = smallCard("Afară");
+        outside = Ui.text(this, 44, Ui.TEXT, true);
+        outside.setText("—");
+        outside.setPadding(0, Ui.dp(this, 4), 0, 0);
+        tempCard.addView(outside);
+        outsideUnit = Ui.text(this, 15, Ui.MUTED, false);
+        outsideUnit.setText("°C");
+        tempCard.addView(outsideUnit);
+        LinearLayout.LayoutParams tLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
+        tLp.rightMargin = gap;
+        small.addView(tempCard, tLp);
 
         LinearLayout dateCard = smallCard("Azi");
         day = Ui.text(this, 32, Ui.TEXT, true);
@@ -243,13 +239,13 @@ public class MainActivity extends Activity {
     }
 
     // Android 9 keeps a single resumed activity: touching an embedded app pauses this one.
-    // So GPS follows start/stop (visible), not resume/pause, or the speed would freeze
+    // So the temperature follows start/stop (visible), not resume/pause, or it would freeze
     // while you use Waze. The slot is relaunched only when we come back from being hidden
     // (e.g. after an app was opened full screen), not on every touch.
     @Override
     protected void onStart() {
         super.onStart();
-        startGps();
+        tempTick.run();
         navSlot.setWatching(true);
     }
 
@@ -262,27 +258,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onStop() {
         navSlot.setWatching(false);
-        if (locations != null) locations.removeUpdates(gps);
+        outside.removeCallbacks(tempTick);
         super.onStop();
-    }
-
-    private void startGps() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            return;
-        }
-        locations = (LocationManager) getSystemService(LOCATION_SERVICE);
-        try {
-            locations.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 0, gps);
-        } catch (RuntimeException e) {
-            Log.w(TAG, "GPS unavailable", e);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
-        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) startGps();
     }
 
     @Override

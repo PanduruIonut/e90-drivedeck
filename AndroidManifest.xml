@@ -25,7 +25,6 @@
     <uses-permission android:name="android.permission.HARDWARE_TEST" />
 
     <!-- Speed comes from the head unit's own GPS. -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Dock shows Wi-Fi / 4G / offline. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 

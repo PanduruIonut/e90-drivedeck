@@ -92,7 +92,6 @@ fi
 
 if step install "install DriveDeck"; then
     r=$(adb -s "$D" install -r build/drivedeck.apk 2>&1 | tail -1)
-    adb -s "$D" shell pm grant dev.drivedeck android.permission.ACCESS_FINE_LOCATION
     adb -s "$D" shell cmd notification allow_listener dev.drivedeck/dev.drivedeck.DeckNotificationListener
     g=$(adb -s "$D" shell dumpsys package dev.drivedeck | grep -c -E '(ACTIVITY_EMBEDDING|INTERNAL_SYSTEM_WINDOW|HARDWARE_TEST|FORCE_STOP_PACKAGES|MEDIA_CONTENT_CONTROL): granted=true')
     [ "$r" = "Success" ] && [ "$g" = 5 ] && record install PASS "installed, 5/5 system permissions" \
@@ -164,9 +163,11 @@ if step media "media sessions for Now Playing"; then
     record media INFO "sessions: ${s:-none} ($OUT/media_session.txt)"
 fi
 
-if step temp "outside temperature source"; then
-    adb -s "$D" shell 'getprop | grep -i -E "temp|wendu"; settings list system | grep -i temp; settings list global | grep -i temp' > "$OUT/temp.txt"
-    record temp INFO "$(wc -l < "$OUT/temp.txt" | tr -d ' ') candidate lines ($OUT/temp.txt)"
+# The vendor UI publishes the CAN outside temperature in forfan.user.info (CanFunc.UpdateOutTemp);
+# DriveDeck's "Afară" card reads it. Compare it with what the vendor status bar shows.
+if step temp "outside temperature (forfan.user.info, as the Afară card reads it)"; then
+    t=$(adb -s "$D" shell getprop forfan.user.info </dev/null | tr -d '\r')
+    record temp INFO "forfan.user.info='$t' — must match the vendor status bar; empty = no CAN reading yet"
 fi
 
 if step pull_apps "copy the Spotify/Waze/YouTube APKs for testing at home on the emulator"; then
