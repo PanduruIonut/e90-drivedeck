@@ -76,6 +76,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         useActivityView = getIntent().getBooleanExtra("activityview", false);
+        EmbeddedDisplayView.scale = getIntent().getFloatExtra("vdscale", 1f);
         String navPkg = extraOr("left", Apps.WAZE);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         musicSource = initialMusicSource();

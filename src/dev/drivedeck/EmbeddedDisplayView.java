@@ -3,6 +3,7 @@ package dev.drivedeck;
 import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
@@ -55,25 +56,43 @@ final class EmbeddedDisplayView extends TextureView implements TextureView.Surfa
         return display != null && surface != null;
     }
 
+    /**
+     * Virtual display size relative to the view (--ef vdscale, default 1). A car-side knob in case the
+     * unit still renders the embedded app at the wrong size: e.g. 0.6667 creates the display at the
+     * panel's physical pixel size. The TextureView scales the frames to fill the view either way, and
+     * touches are scaled by the same factor.
+     */
+    static float scale = 1f;
+
+    private int scaled(int px) {
+        return Math.max(1, Math.round(px * scale));
+    }
+
+    private int dpi() {
+        return scaled(getResources().getDisplayMetrics().densityDpi);
+    }
+
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture st, int w, int h) {
+        st.setDefaultBufferSize(scaled(w), scaled(h));
         surface = new Surface(st);
-        int dpi = getResources().getDisplayMetrics().densityDpi;
         if (display == null) {
             DisplayManager dm = (DisplayManager) getContext().getSystemService(Context.DISPLAY_SERVICE);
-            display = dm.createVirtualDisplay("DriveDeck-" + name, w, h, dpi, surface, FLAGS);
-            Log.i(MainActivity.TAG, name + ": virtual display " + displayId() + " " + w + "x" + h + " @" + dpi);
+            display = dm.createVirtualDisplay("DriveDeck-" + name, scaled(w), scaled(h), dpi(), surface, FLAGS);
+            Log.i(MainActivity.TAG, name + ": virtual display " + displayId() + " " + scaled(w) + "x" + scaled(h)
+                    + " @" + dpi() + " (view " + w + "x" + h + ", scale " + scale + ")");
             createInputForwarder();
         } else {
             display.setSurface(surface);
-            display.resize(w, h, dpi);
+            display.resize(scaled(w), scaled(h), dpi());
         }
         listener.onDisplayReady(this);
     }
 
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture st, int w, int h) {
-        if (display != null) display.resize(w, h, getResources().getDisplayMetrics().densityDpi);
+        st.setDefaultBufferSize(scaled(w), scaled(h));
+        if (display != null) display.resize(scaled(w), scaled(h), dpi());
     }
 
     @Override
@@ -113,6 +132,11 @@ final class EmbeddedDisplayView extends TextureView implements TextureView.Surfa
     public boolean onTouchEvent(MotionEvent event) {
         if (inputForwarder == null) return super.onTouchEvent(event);
         MotionEvent copy = MotionEvent.obtain(event);
+        if (scale != 1f) {
+            Matrix m = new Matrix();
+            m.setScale(scale, scale);
+            copy.transform(m);
+        }
         try {
             forwardEvent.invoke(inputForwarder, copy);
             return true;
