@@ -47,9 +47,9 @@ final class Tasks {
     /**
      * If the top of the main display is not our package, focuses the stack holding our task, which
      * puts it back on top (IActivityManager.setFocusedStack, MANAGE_ACTIVITY_STACKS). Stacks come
-     * top-first for each display in getAllStackInfos.
+     * top-first for each display in getAllStackInfos. Returns true if it had to.
      */
-    static void keepOnTopOfMainDisplay(int ourTaskId, String ourPkg) {
+    static boolean keepOnTopOfMainDisplay(int ourTaskId, String ourPkg) {
         try {
             Class<?> am = Class.forName("android.app.ActivityManager");
             Object service = am.getMethod("getService").invoke(null);
@@ -65,12 +65,34 @@ final class Tasks {
                     if (id == ourTaskId) ourStack = field(k, "stackId").getInt(info);
                 }
             }
-            if (ourStack < 0 || ourPkg.equals(top)) return;
+            if (ourStack < 0 || ourPkg.equals(top)) return false;
             service.getClass().getMethod("setFocusedStack", int.class).invoke(service, ourStack);
             Log.i(MainActivity.TAG, top + " came over the dashboard; stack " + ourStack + " put back on top");
+            return true;
         } catch (Exception e) {
             Log.w(MainActivity.TAG, "could not put the dashboard back on top", e);
+            return false;
         }
+    }
+
+    /** Focuses (and so resumes) the app's stack on this display; false if it has none there. */
+    static boolean focusStackOf(String pkg, int displayId) {
+        try {
+            Class<?> am = Class.forName("android.app.ActivityManager");
+            Object service = am.getMethod("getService").invoke(null);
+            List<?> stacks = (List<?>) service.getClass().getMethod("getAllStackInfos").invoke(service);
+            for (Object info : stacks) {
+                Class<?> k = info.getClass();
+                ComponentName top = (ComponentName) field(k, "topActivity").get(info);
+                if (top == null || !pkg.equals(top.getPackageName())) continue;
+                if (field(k, "displayId").getInt(info) != displayId) continue;
+                service.getClass().getMethod("setFocusedStack", int.class).invoke(service, field(k, "stackId").getInt(info));
+                return true;
+            }
+        } catch (Exception e) {
+            Log.w(MainActivity.TAG, pkg + ": could not focus it", e);
+        }
+        return false;
     }
 
     /** True if any task stack lives on this display; on error, true (so callers don't relaunch blindly). */

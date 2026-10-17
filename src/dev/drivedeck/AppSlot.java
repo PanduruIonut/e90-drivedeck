@@ -162,6 +162,24 @@ final class AppSlot extends FrameLayout {
         postDelayed(escapeGuard, 1000);
     }
 
+    private boolean focusUnsafe;
+
+    /**
+     * Gives the focus to the app in the slot, so that it is resumed and keeps drawing (see
+     * MainActivity.onWindowFocusChanged). If that brought another task over the dashboard (a task
+     * that returns to Home, while DriveDeck is not the Home app), DriveDeck is put back on top and
+     * keeps the focus from then on: a paused map beats a covered dashboard.
+     */
+    void focusApp() {
+        if (textureView == null || !ready || focusUnsafe) return;
+        if (!Tasks.focusStackOf(pkg, textureView.displayId())) return;
+        if (textureView.keepHostOnTop()) {
+            focusUnsafe = true;
+            Log.w(MainActivity.TAG, pkg + ": focusing it brought another task over the dashboard; DriveDeck keeps"
+                    + " the focus, so the map pauses whenever the dashboard has it. Make DriveDeck the Home app.");
+        }
+    }
+
     /** The user is taking the app (or the screen) somewhere else: let it go. */
     void stopEscapeGuard() {
         guardUntil = 0;

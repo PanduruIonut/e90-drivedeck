@@ -236,6 +236,26 @@ public class MainActivity extends Activity {
         return v == null || v.isEmpty() ? def : v;
     }
 
+    /**
+     * Android 9 has a single resumed activity, and a tap on the dashboard (or on the map: the tap reaches
+     * our window before it is forwarded) can leave the focus with DriveDeck. That pauses the app in the
+     * slot, and Waze's map stops drawing: 0 new frames while the car moved (repro-map-pause.sh). So the
+     * focus goes back to the slot's app shortly after the dashboard gets it.
+     */
+    private final Runnable focusSlot = new Runnable() {
+        @Override
+        public void run() {
+            if (hasWindowFocus()) navSlot.focusApp();
+        }
+    };
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        navSlot.removeCallbacks(focusSlot);
+        if (hasFocus) navSlot.postDelayed(focusSlot, 300);
+    }
+
     // Android 9 keeps a single resumed activity: touching an embedded app pauses this one.
     // So the temperature follows start/stop (visible), not resume/pause, or it would freeze
     // while you use Waze. The slot is relaunched only when we come back from being hidden

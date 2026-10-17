@@ -177,10 +177,10 @@ final class EmbeddedDisplayView extends TextureView implements TextureView.Surfa
         return true;
     }
 
-    private void keepHostOnTop() {
-        if (getContext() instanceof Activity) {
-            Tasks.keepOnTopOfMainDisplay(((Activity) getContext()).getTaskId(), getContext().getPackageName());
-        }
+    /** Puts DriveDeck back on top of the main display if something came over it; true if it had to. */
+    boolean keepHostOnTop() {
+        return getContext() instanceof Activity
+                && Tasks.keepOnTopOfMainDisplay(((Activity) getContext()).getTaskId(), getContext().getPackageName());
     }
 
     private void createInputForwarder() {

@@ -27,7 +27,8 @@
 6. Pornește ceva în **Spotify** și în **YouTube** → verific ce primește cardul Now Playing.
    Apoi atinge **coperta Spotify** în Now Playing → biblioteca se deschide peste hartă → prima dată
    Spotify cere **autorizare** pentru DriveDeck (o singură dată) → alege un playlist.
-7. Apasă Home → **DriveDeck** → întâi **„Just once”**. Dacă merge bine → **„Always”**.
+7. Apasă Home → **DriveDeck** → **„Always”**. Nu e opțional: dacă DriveDeck nu e aplicația Home, harta Waze
+   stă pe pauză ori de câte ori atingi dashboard-ul (vezi punctul 6 mai jos, 17 oct seara).
 8. Dacă se pierde conexiunea: reconectează Wi-Fi-ul navigației, rulează din nou `./connect.sh`
    (descarcă jurnalul cu motivul deconectării).
 
@@ -75,6 +76,14 @@
 5. **Cardul Viteză e acum „Afară”**: temperatura de la senzorul mașinii, citită din `forfan.user.info`, pe care o
    scrie aplicația vendorului. La mașină, pasul `temp` o notează: trebuie să fie aceeași cifră ca în bara de sus a
    navigației.
+
+6. **Harta Waze îngheța după orice atingere pe dashboard.** În Android 9, o singură activitate e activă: atingerea
+   dădea focusul la DriveDeck, Waze intra pe pauză și harta nu mai desena. APK vechi: 0 cadre noi pe hartă cu mașina
+   în mișcare, 3/3 runde. Acum DriveDeck dă focusul înapoi după 300 ms: 7/7 runde cu hartă vie (44–97 de cadre),
+   `./repro-map-pause.sh`. **Merge doar cu DriveDeck ca Home:** altfel, la un Waze pornit din launcher-ul vendorului,
+   focusul dat lui Waze aduce launcher-ul peste dashboard. DriveDeck detectează asta și păstrează focusul, deci harta
+   stă pe pauză. **De urmărit la mașină:** pe emulator Waze crapă mai des acum, pentru că desenează mai mult
+   (crash-ul e în GL-ul emulatorului). Dacă și pe navigație crapă des, suspectul e pauza/reluarea la fiecare atingere.
 
 Limită cunoscută: judecătorul măsoară doar acoperirea. Pe emulator, `texture_fix` dă PASS deși imaginea
 e întinsă, deci la mașină trebuie să ne uităm și la captură.
