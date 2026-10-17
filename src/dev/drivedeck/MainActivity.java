@@ -66,6 +66,9 @@ public class MainActivity extends Activity {
     private String musicSource;
     private SharedPreferences prefs;
     private LocationManager locations;
+    /** The newest dashboard, and the one it replaces (see retirePrevious). */
+    private static MainActivity current;
+    private MainActivity previous;
 
     private final LocationListener gps = new LocationListener() {
         @Override
@@ -105,6 +108,11 @@ public class MainActivity extends Activity {
         navSlot = new AppSlot(this, navPkg, "Waze", false, new AppSlot.Fallback() {
             @Override public View create(Context c) { return new WazeCard(c); }
         });
+        previous = current;
+        current = this;
+        navSlot.onStarted = new Runnable() {
+            @Override public void run() { retirePrevious(); }
+        };
         // Map card: Waze, with the Spotify library sliding over it when opened.
         FrameLayout mapArea = new FrameLayout(this);
         mapArea.addView(navSlot, LibraryPanel.fill());
@@ -173,6 +181,21 @@ public class MainActivity extends Activity {
         card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 10));
         card.addView(Ui.label(this, label));
         return card;
+    }
+
+    /**
+     * Opening DriveDeck from its launcher icon and then pressing Home gives two dashboards: Android 9
+     * never reuses a standard activity for a Home launch, singleTask or not. Each has its own virtual
+     * display, GPS listener and Spotify connection. Once the new one has the app in its slot, the old
+     * one goes; not before, or its display would drop the app full screen on the way out.
+     */
+    private void retirePrevious() {
+        MainActivity p = previous;
+        previous = null;
+        if (p != null && p != this && !p.isFinishing() && !p.isDestroyed()) {
+            Log.i(TAG, "a newer dashboard has the slot; closing the previous one");
+            p.finishAndRemoveTask();
+        }
     }
 
     /** Waze opens full screen; a music app becomes the only music source (the old one is stopped). */
@@ -264,6 +287,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (current == this) current = null;
         day.removeCallbacks(dateTick);
         spotify.disconnect();
         navSlot.release();

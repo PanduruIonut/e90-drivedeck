@@ -54,3 +54,22 @@
      emulator cu launcher-ul original ca Home (FAIL înainte, PASS după);
   2. `car-verdict.sh`: dacă DriveDeck nu e în față la captură, pasul e INVALID, nu FAIL;
   3. o singură instanță DriveDeck (launcher + Home creează două).
+
+### Rezolvat acasă, 17 oct seara (verificat pe emulator, NU încă pe navigație)
+
+1. **Launcher-ul peste DriveDeck: reparat.** Mecanismul e confirmat: un task pornit cu
+   `NEW_TASK|TASK_ON_HOME` (cum pornește un launcher) aduce Home în față la orice `startActivity` sau
+   mutare a lui (`reparent ... returnToHome`). Slotul mută acum task-ul existent fără să-l repornească,
+   apoi pune DriveDeck înapoi deasupra dacă a apărut ceva peste el. `./repro-return-home.sh`, câte 6
+   runde: APK vechi + `FLAGS=0x10004000` **0/6**, APK nou **6/6**, iar controlul cu task obișnuit e 6/6 la ambele.
+   Dacă launcher-ul vendorului pune într-adevăr flag-ul ăsta se vede în `<pas>.activities.txt` (`flg=`).
+2. **`car-verdict.sh`: un pas cu DriveDeck acoperit iese INVALID și se reia la rularea următoare.**
+   Pe emulator, cu APK-ul vechi: 4/4 INVALID; cu cel nou: judecat normal. Tot acolo, după `force-stop` se
+   așteaptă dispariția display-ului vechi. Altfel aplicația din slot cade peste noul DriveDeck (o cursă
+   găsită în harness, care putea să strice și rundele din mașină).
+3. **O singură instanță:** pornire din iconiță + Home → APK vechi: 3/3 cu două dashboard-uri; nou: 3/3 cu unul.
+
+Limită cunoscută: judecătorul măsoară doar acoperirea. Pe emulator, `texture_fix` dă PASS deși imaginea
+e întinsă, deci la mașină trebuie să ne uităm și la captură.
+
+**Următoarea sesiune: `./car-verdict.sh --fresh`** (sesiunea veche are pasul `install` marcat cu APK-ul vechi).

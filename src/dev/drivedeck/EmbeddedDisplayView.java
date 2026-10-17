@@ -1,5 +1,6 @@
 package dev.drivedeck;
 
+import android.app.Activity;
 import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
@@ -144,14 +145,26 @@ final class EmbeddedDisplayView extends TextureView implements TextureView.Surfa
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture st) {}
 
-    /** Starts the app on our display; if it already has a task elsewhere, moves that task here. */
+    /**
+     * Brings the app onto our display. An app that already has a task is only moved here, never
+     * started again: starting an existing task brings it to the front, and for a task the vendor
+     * launcher started (NEW_TASK|TASK_ON_HOME) Android 9 then also brings the Home stack to the front
+     * of the main display, over DriveDeck ("bringingFoundTaskToFront returnToHome", 17 oct car
+     * session; repro-return-home.sh). Only an app with no task is started. Moving such a task does
+     * the same ("reparent adjustFocusToNextFocusableStack returnToHome"), so afterwards DriveDeck is
+     * put back on top of the main display if anything came over it.
+     */
     void launch(Intent launch, String pkg) {
         int id = displayId();
         if (id < 0) return;
-        ActivityOptions opts = ActivityOptions.makeBasic();
-        opts.setLaunchDisplayId(id);
-        getContext().startActivity(new Intent(launch).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), opts.toBundle());
-        Tasks.moveToDisplay(pkg, id);
+        if (Tasks.moveToDisplay(pkg, id) == 0) {
+            ActivityOptions opts = ActivityOptions.makeBasic();
+            opts.setLaunchDisplayId(id);
+            getContext().startActivity(new Intent(launch).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), opts.toBundle());
+        }
+        if (getContext() instanceof Activity) {
+            Tasks.keepOnTopOfMainDisplay(((Activity) getContext()).getTaskId(), getContext().getPackageName());
+        }
     }
 
     private void createInputForwarder() {

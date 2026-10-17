@@ -15,7 +15,9 @@ import java.util.List;
 final class Tasks {
     private Tasks() {}
 
-    static void moveToDisplay(String pkg, int displayId) {
+    /** Returns how many of the app's stacks are now on this display (moved or already there); 0 if none. */
+    static int moveToDisplay(String pkg, int displayId) {
+        int found = 0;
         try {
             Class<?> am = Class.forName("android.app.ActivityManager");
             Object service = am.getMethod("getService").invoke(null);
@@ -26,7 +28,9 @@ final class Tasks {
                 ComponentName top = (ComponentName) field(k, "topActivity").get(info);
                 int stackDisplay = field(k, "displayId").getInt(info);
                 int stackId = field(k, "stackId").getInt(info);
-                if (top != null && pkg.equals(top.getPackageName()) && stackDisplay != displayId) {
+                if (top == null || !pkg.equals(top.getPackageName())) continue;
+                found++;
+                if (stackDisplay != displayId) {
                     move.invoke(service, stackId, displayId);
                     Log.i(MainActivity.TAG, pkg + ": moved stack " + stackId + " from display "
                             + stackDisplay + " to " + displayId);
@@ -34,6 +38,36 @@ final class Tasks {
             }
         } catch (Exception e) {
             Log.w(MainActivity.TAG, pkg + ": could not move its task to display " + displayId, e);
+        }
+        return found;
+    }
+
+    /**
+     * If the top of the main display is not our package, focuses the stack holding our task, which
+     * puts it back on top (IActivityManager.setFocusedStack, MANAGE_ACTIVITY_STACKS). Stacks come
+     * top-first for each display in getAllStackInfos.
+     */
+    static void keepOnTopOfMainDisplay(int ourTaskId, String ourPkg) {
+        try {
+            Class<?> am = Class.forName("android.app.ActivityManager");
+            Object service = am.getMethod("getService").invoke(null);
+            List<?> stacks = (List<?>) service.getClass().getMethod("getAllStackInfos").invoke(service);
+            String top = null;
+            int ourStack = -1;
+            for (Object info : stacks) {
+                Class<?> k = info.getClass();
+                if (field(k, "displayId").getInt(info) != 0) continue;
+                ComponentName c = (ComponentName) field(k, "topActivity").get(info);
+                if (top == null && c != null) top = c.getPackageName();
+                for (int id : (int[]) field(k, "taskIds").get(info)) {
+                    if (id == ourTaskId) ourStack = field(k, "stackId").getInt(info);
+                }
+            }
+            if (ourStack < 0 || ourPkg.equals(top)) return;
+            service.getClass().getMethod("setFocusedStack", int.class).invoke(service, ourStack);
+            Log.i(MainActivity.TAG, top + " came over the dashboard; stack " + ourStack + " put back on top");
+        } catch (Exception e) {
+            Log.w(MainActivity.TAG, "could not put the dashboard back on top", e);
         }
     }
 

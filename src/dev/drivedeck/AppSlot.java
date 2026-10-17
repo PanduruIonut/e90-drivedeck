@@ -31,6 +31,8 @@ final class AppSlot extends FrameLayout {
     private final TextView notice;
     private boolean ready;
     private boolean fellBack;
+    /** Runs each time the app has been put in the slot. */
+    Runnable onStarted;
 
     AppSlot(Context c, String pkg, String label, boolean expandButton, Fallback fallback) {
         super(c);
@@ -124,6 +126,7 @@ final class AppSlot extends FrameLayout {
                 activityView.startActivity(new Intent(launch));
             }
             Log.i(MainActivity.TAG, pkg + ": started inside the dashboard");
+            if (onStarted != null) onStarted.run();
         } catch (final Throwable t) {
             Log.w(MainActivity.TAG, pkg + ": start inside failed", t);
             post(new Runnable() {

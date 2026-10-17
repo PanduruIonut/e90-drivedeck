@@ -25,21 +25,48 @@ V="$OUT/verdict.md"
 alive() { adb -s "$D" get-state >/dev/null 2>&1; }
 need_unit() { alive || { echo; echo "LOST the unit. Reconnect Wi-Fi, run ./connect.sh, then ./car-verdict.sh again."; exit 2; }; }
 done_step() { [ -e ".verdict/$S/$1" ]; }
-record() { echo "| $1 | $2 | $3 |" >> "$V"; touch ".verdict/$S/$1"; echo "  -> $2  $3"; }
+# An INVALID step measured nothing, so it is not marked done: the next run retries it.
+record() {
+    echo "| $1 | $2 | $3 |" >> "$V"
+    [ "$2" = INVALID ] || touch ".verdict/$S/$1"
+    echo "  -> $2  $3"
+}
 
 need_unit
 LOGICAL_W=$(adb -s "$D" shell wm size 2>/dev/null | awk -F'[ x]' '/Override/{print $3}' | head -1)
 [ -n "$LOGICAL_W" ] || LOGICAL_W=$(adb -s "$D" shell wm size | awk -F'[ x]' '/Physical/{print $3}')
 
-# Starts DriveDeck with the given extras, waits, screenshots, judges the map slot.
+# force-stop removes DriveDeck's virtual display asynchronously; a start before that is done gets
+# the slot's app dropped on top of the new dashboard (moveTasksToFullscreenStack - onTop). Wait.
+stop_drivedeck() {
+    adb -s "$D" shell am force-stop dev.drivedeck
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        adb -s "$D" shell dumpsys display </dev/null | grep -q 'DriveDeck-' || return 0
+        adb -s "$D" shell 'sleep 0.5'
+    done
+    echo "    WARN: DriveDeck's virtual display still there 5 s after force-stop"
+}
+
+# What is on top of the main display (package/activity).
+top_of_main() {
+    adb -s "$D" shell dumpsys activity activities </dev/null \
+        | awk '/^ *Display #0/{d=1;next} /^ *Display #/{d=0} d&&/realActivity=/{sub(/.*realActivity=/,""); print; exit}'
+}
+
+# Starts DriveDeck with the given extras, waits, screenshots, judges the map slot. If DriveDeck is
+# not on top of the main display at capture time the judge would measure some other screen (17 oct:
+# three FAILs on the vendor home screen), so the result is INVALID instead.
 run_and_judge() {
     local tag=$1; shift
-    adb -s "$D" shell am force-stop dev.drivedeck
+    stop_drivedeck
     adb -s "$D" logcat -c
     adb -s "$D" shell am start -n dev.drivedeck/.MainActivity "$@" >/dev/null
     adb -s "$D" shell 'sleep 10'
     need_unit
+    local top
+    top=$(top_of_main)
     adb -s "$D" exec-out screencap -p > "$OUT/$tag.png"
+    adb -s "$D" shell dumpsys activity activities > "$OUT/$tag.activities.txt"
     adb -s "$D" shell dumpsys SurfaceFlinger > "$OUT/$tag.sf.txt"
     # If the HWC isn't the cause, these show how Android itself sized the slot's display and windows.
     adb -s "$D" shell dumpsys display > "$OUT/$tag.display.txt"
@@ -47,6 +74,10 @@ run_and_judge() {
     adb -s "$D" logcat -d -s 'DriveDeck:*' > "$OUT/$tag.log"
     local rect
     rect=$(grep 'slot-rect Waze' "$OUT/$tag.log" | tail -1 | sed 's/.*slot-rect Waze //')
+    case "$top" in
+        dev.drivedeck/*) ;;
+        *) JUDGE="INVALID DriveDeck not on top of the main display ($top is); see $tag.activities.txt"; return ;;
+    esac
     [ -n "$rect" ] || { echo "no slot-rect in log"; JUDGE="FAIL no slot-rect logged"; return; }
     JUDGE=$(python3 -I judge.py "$OUT/$tag.png" --rect "$rect" --logical-width "$LOGICAL_W")
 }
@@ -113,7 +144,7 @@ if step real "real apps (Waze in the map slot)"; then
         run_and_judge real
         record real "${JUDGE%% *}" "${JUDGE#* } ($OUT/real.png)"
     else
-        adb -s "$D" shell am force-stop dev.drivedeck
+        stop_drivedeck
         adb -s "$D" shell am start -n dev.drivedeck/.MainActivity >/dev/null
         adb -s "$D" shell 'sleep 8'; adb -s "$D" exec-out screencap -p > "$OUT/real.png"
         record real SKIP "Waze not installed yet ($OUT/real.png)"
