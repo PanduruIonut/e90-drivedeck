@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><title>A · Dashboard</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .main { flex: 1.75; }
+  .side { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .np { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .np .top { display: flex; gap: 14px; align-items: center; }
+  .np .art { width: 118px; height: 118px; flex: none; }
+  .np .meta { min-width: 0; }
+  .np .src { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--green); margin-bottom: 6px; font-weight: 600; }
+  .small { height: 112px; display: flex; gap: 10px; }
+  .small .card { flex: 1; padding: 14px 16px; }
+  .speed b { font-size: 50px; font-weight: 700; line-height: 1; display: block; margin-top: 6px; }
+  .speed small { color: var(--muted); font-size: 15px; }
+  .weather b { font-size: 34px; display: block; margin-top: 8px; }
+  .weather small { color: var(--muted); font-size: 14px; }
+</style></head>
+<body>
+  <nav class="dock">
+    <div class="time">14:32</div><div class="status">4G ▮▮▮</div>
+    <div class="apps">
+      <div class="app grid active">▦</div>
+      <div class="app waze">☺</div>
+      <div class="app spotify">♫</div>
+      <div class="app youtube">▶</div>
+      <div class="app ytmusic">◉</div>
+    </div>
+  </nav>
+
+  <section class="card map main">
+    <svg viewBox="0 0 720 460" preserveAspectRatio="xMidYMid slice">
+      <rect width="720" height="460" fill="#1b1f26"/>
+      <g fill="#232933">
+        <rect x="20" y="30" width="150" height="110" rx="6"/><rect x="200" y="30" width="190" height="110" rx="6"/>
+        <rect x="420" y="30" width="280" height="110" rx="6"/><rect x="20" y="175" width="230" height="120" rx="6"/>
+        <rect x="285" y="175" width="160" height="120" rx="6"/><rect x="480" y="175" width="220" height="120" rx="6"/>
+        <rect x="20" y="330" width="300" height="110" rx="6"/><rect x="355" y="330" width="345" height="110" rx="6"/>
+      </g>
+      <path d="M0 395 C 180 380, 330 420, 720 370" stroke="#20384d" stroke-width="26" fill="none"/>
+      <g stroke="#3a4250" stroke-width="12" fill="none" stroke-linecap="round">
+        <path d="M0 158 H720"/><path d="M0 313 H720"/><path d="M185 0 V460"/><path d="M405 0 V460"/><path d="M465 0 V460"/>
+      </g>
+      <path d="M405 470 V313 H465 V158 H720" stroke="#0a84ff" stroke-width="13" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="405" cy="405" r="15" fill="#fff"/><path d="M405 393 l9 20 -9 -5 -9 5z" fill="#0a84ff"/>
+    </svg>
+    <div class="turn">
+      <div class="arrow"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M6 21V11h9V7l6 6-6 6v-4H9v6z" fill="#fff"/></svg></div>
+      <div><div class="dist">300 m</div><div class="street">Str. Republicii</div></div>
+    </div>
+    <div class="eta"><div><b>14:51</b>sosire</div><div><b>19 min</b>timp</div><div><b>11 km</b>distanță</div></div>
+  </section>
+
+  <aside class="side">
+    <section class="card np">
+      <div class="top">
+        <div class="art"></div>
+        <div class="meta">
+          <div class="src">● Spotify</div>
+          <div class="title">Midnight City</div>
+          <div class="artist">M83</div>
+        </div>
+      </div>
+      <div class="bar"><i></i></div>
+      <div class="controls"><span>⏮</span><div class="play">❚❚</div><span>⏭</span></div>
+    </section>
+    <div class="small">
+      <section class="card speed"><div class="label">Viteză</div><b>62</b><small>km/h</small></section>
+      <section class="card weather"><div class="label">Afară</div><b>14°</b><small>din mașină</small></section>
+    </div>
+  </aside>
+</body></html>

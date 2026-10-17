@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><title>B · Now Playing</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .stage { flex: 1; display: flex; gap: 28px; padding: 22px 26px; }
+  .stage .art { width: 416px; height: 416px; flex: none; border-radius: 18px; box-shadow: 0 16px 50px rgba(233,78,119,.25); }
+  .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .info .tabs { margin-bottom: 26px; }
+  .info .title { font-size: 34px; }
+  .info .artist { font-size: 20px; margin-top: 6px; }
+  .info .bar { margin: 30px 0 8px; height: 6px; }
+  .times { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .info .controls { margin-top: 26px; justify-content: flex-start; gap: 52px; }
+  .info .controls span { font-size: 38px; }
+  .info .controls .play { width: 84px; height: 84px; font-size: 32px; }
+  .next { margin-top: auto; display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 15px; }
+  .next .mini { width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg,#0f9b8e,#1e3c72); }
+  .pill {
+    position: absolute; right: 18px; top: 18px; display: flex; align-items: center; gap: 12px;
+    background: var(--card2); border-radius: 18px; padding: 10px 16px 10px 10px;
+  }
+  .pill .arrow { width: 40px; height: 40px; border-radius: 10px; background: var(--waze); display: grid; place-items: center; }
+  .pill b { font-size: 22px; display: block; line-height: 1; }
+  .pill small { color: var(--muted); font-size: 13px; }
+</style></head>
+<body>
+  <nav class="dock">
+    <div class="time">14:32</div><div class="status">4G ▮▮▮</div>
+    <div class="apps">
+      <div class="app grid">▦</div>
+      <div class="app waze">☺</div>
+      <div class="app spotify active">♫</div>
+      <div class="app youtube">▶</div>
+      <div class="app ytmusic">◉</div>
+    </div>
+  </nav>
+
+  <section class="card stage">
+    <div class="art"></div>
+    <div class="info">
+      <div class="tabs"><span class="on">Acum</span><span>Playlisturi</span><span>Recente</span><span>Căutare</span></div>
+      <div class="label" style="color:var(--green)">● Spotify · Daily Mix 2</div>
+      <div class="title" style="margin-top:8px">Midnight City</div>
+      <div class="artist">M83 — Hurry Up, We're Dreaming</div>
+      <div class="bar"><i></i></div>
+      <div class="times"><span>1:38</span><span>4:03</span></div>
+      <div class="controls"><span>⤮</span><span>⏮</span><div class="play">❚❚</div><span>⏭</span><span>♡</span></div>
+      <div class="next"><div class="mini"></div><div>Urmează · <b style="color:var(--text)">Intro</b> — The xx</div></div>
+    </div>
+    <div class="pill">
+      <div class="arrow"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 21V11h9V7l6 6-6 6v-4H9v6z" fill="#fff"/></svg></div>
+      <div><b>300 m</b><small>Str. Republicii</small></div>
+    </div>
+  </section>
+</body></html>

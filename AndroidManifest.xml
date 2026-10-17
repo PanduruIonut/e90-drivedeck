@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="dev.drivedeck"
+    android:versionCode="2"
+    android:versionName="0.2">
+
+    <!-- Signature permissions: granted because the APK is signed with the same
+         (public AOSP test) platform key as this head unit's firmware.
+         Approved by the owner for this personal head unit. No INTERNET permission. -->
+    <uses-permission android:name="android.permission.ACTIVITY_EMBEDDING" />
+    <uses-permission android:name="android.permission.INJECT_EVENTS" />
+    <uses-permission android:name="android.permission.CAPTURE_VIDEO_OUTPUT" />
+    <uses-permission android:name="android.permission.MANAGE_ACTIVITY_STACKS" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" />
+    <!-- Android 9 only lets a non-system display owner launch other apps' activities that
+         declare allowEmbedded (Waze/Spotify don't), unless the caller holds this one
+         (ActivityStackSupervisor.isCallerAllowedToLaunchOnDisplay). -->
+    <uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+    <!-- Lets the Spotify card read media sessions without the notification-access step. -->
+    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
+    <!-- Only one music app at a time: the tab you leave is paused and then force-stopped. -->
+    <uses-permission android:name="android.permission.FORCE_STOP_PACKAGES" />
+
+    <!-- Speed comes from the head unit's own GPS. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Dock shows Wi-Fi / 4G / offline. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:label="DriveDeck"
+        android:hardwareAccelerated="true"
+        android:allowBackup="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:launchMode="singleTask"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Can be picked as the Home app; the unit's own launcher stays reachable from the dock. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Reads Waze's turn-by-turn notification and finds Spotify's media session
+             for the fallback cards. The owner enables it in notification access. -->
+        <service
+            android:name=".DeckNotificationListener"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

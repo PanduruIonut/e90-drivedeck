@@ -1,0 +1,223 @@
+package dev.drivedeck;
+
+import android.app.ActivityView;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.TextView;
+
+/**
+ * One area of the dashboard that hosts a real app (Waze, Spotify, YouTube…) through the
+ * hidden ActivityView. The app shown can be switched at runtime. If embedding is not
+ * possible on this unit, the slot shows a fallback card instead and says why.
+ */
+final class AppSlot extends FrameLayout {
+    interface Fallback {
+        View create(Context c);
+    }
+
+    private final Fallback fallback;
+    private String pkg;
+    private String label;
+    private Intent launch;
+    private ActivityView activityView;
+    private EmbeddedDisplayView textureView;
+    private View fallbackView;
+    private final TextView notice;
+    private boolean ready;
+    private boolean fellBack;
+
+    AppSlot(Context c, String pkg, String label, boolean expandButton, Fallback fallback) {
+        super(c);
+        this.fallback = fallback;
+        setBackground(Ui.card(c));
+        setClipToOutline(true);
+
+        notice = Ui.text(c, 20, Ui.MUTED, false);
+        notice.setGravity(Gravity.CENTER);
+        notice.setVisibility(GONE);
+
+        setTarget(pkg, label);
+        embed();
+        addView(notice, new LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        if (expandButton) addExpandButton();
+    }
+
+    private void setTarget(String pkg, String label) {
+        this.pkg = pkg;
+        this.label = label;
+        this.launch = getContext().getPackageManager().getLaunchIntentForPackage(pkg);
+    }
+
+    String currentPackage() {
+        return pkg;
+    }
+
+    /** Shows another app in this slot (e.g. a music tab switch). */
+    void switchTo(String newPkg, String newLabel) {
+        setTarget(newPkg, newLabel);
+        Log.i(MainActivity.TAG, "slot switched to " + newPkg);
+        if (fellBack) {
+            return;
+        }
+        startInside();
+    }
+
+    private void embed() {
+        if (!MainActivity.useActivityView) {
+            textureView = new EmbeddedDisplayView(getContext(), label, new EmbeddedDisplayView.Listener() {
+                @Override
+                public void onDisplayReady(EmbeddedDisplayView view) {
+                    ready = true;
+                    startInside();
+                }
+            });
+            addView(textureView, 0, new LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            Log.i(MainActivity.TAG, pkg + ": TextureView embedder created");
+            return;
+        }
+        try {
+            final ActivityView av = new ActivityView(getContext());
+            av.setCallback(new ActivityView.StateCallback() {
+                @Override
+                public void onActivityViewReady(ActivityView view) {
+                    ready = true;
+                    startInside();
+                }
+
+                @Override
+                public void onActivityViewDestroyed(ActivityView view) {
+                    ready = false;
+                    Log.i(MainActivity.TAG, "embedded view destroyed (" + pkg + ")");
+                }
+            });
+            addView(av, 0, new LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            activityView = av;
+            Log.i(MainActivity.TAG, pkg + ": ActivityView created");
+        } catch (Throwable t) {
+            Log.w(MainActivity.TAG, "ActivityView unavailable", t);
+            showFallback("încorporare indisponibilă: " + t.getClass().getSimpleName());
+        }
+    }
+
+    private void startInside() {
+        if (fellBack) return;
+        if (launch == null) {
+            notice.setText(label + " nu e instalat");
+            notice.setVisibility(VISIBLE);
+            return;
+        }
+        notice.setVisibility(GONE);
+        if (!ready || (activityView == null && textureView == null)) return;
+        try {
+            if (textureView != null) {
+                textureView.launch(launch, pkg);
+            } else {
+                activityView.startActivity(new Intent(launch));
+            }
+            Log.i(MainActivity.TAG, pkg + ": started inside the dashboard");
+        } catch (final Throwable t) {
+            Log.w(MainActivity.TAG, pkg + ": start inside failed", t);
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    showFallback("pornire eșuată: " + t.getClass().getSimpleName());
+                }
+            });
+        }
+    }
+
+    /** Called when the dashboard comes back to the front, e.g. after the app was opened full screen. */
+    void onHostResumed() {
+        startInside();
+    }
+
+    private static final long WATCH_MS = 5000;
+    private boolean watching;
+
+    /** If the embedded app dies (crash, killed for memory), its display goes empty: relaunch it. */
+    private final Runnable watchdog = new Runnable() {
+        @Override
+        public void run() {
+            if (!watching) return;
+            if (textureView != null && ready && launch != null && !Tasks.hasTaskOnDisplay(textureView.displayId())) {
+                Log.i(MainActivity.TAG, pkg + ": slot empty, relaunching");
+                startInside();
+            }
+            postDelayed(this, WATCH_MS);
+        }
+    };
+
+    /** Watch only while DriveDeck is visible, so an app opened full screen isn't pulled back behind your back. */
+    void setWatching(boolean on) {
+        watching = on;
+        removeCallbacks(watchdog);
+        if (on) postDelayed(watchdog, WATCH_MS);
+    }
+
+    /** Opens the current app full screen. */
+    void expand() {
+        if (launch == null) return;
+        getContext().startActivity(new Intent(launch).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+    }
+
+    private void showFallback(String reason) {
+        if (fellBack) return;
+        fellBack = true;
+        Log.i(MainActivity.TAG, pkg + ": fallback card (" + reason + ")");
+        release();
+        notice.setVisibility(GONE);
+        fallbackView = fallback.create(getContext());
+        addView(fallbackView, 0, new LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        TextView why = Ui.text(getContext(), 11, Ui.MUTED, false);
+        why.setText(reason);
+        int p = Ui.dp(getContext(), 10);
+        why.setPadding(p, p, p, p);
+        addView(why, new LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM | Gravity.START));
+    }
+
+    private void addExpandButton() {
+        TextView expand = Ui.button(getContext(), "⤢");
+        expand.setTextSize(22);
+        expand.setTextColor(Ui.MUTED);
+        expand.setContentDescription("Deschide pe tot ecranul");
+        expand.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                expand();
+            }
+        });
+        addView(expand, new LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.END));
+    }
+
+    void release() {
+        if (textureView != null) {
+            textureView.release();
+            removeView(textureView);
+            textureView = null;
+        }
+        if (activityView != null) {
+            try {
+                activityView.release();
+            } catch (Throwable t) {
+                Log.w(MainActivity.TAG, "release failed", t);
+            }
+            removeView(activityView);
+            activityView = null;
+        }
+        ready = false;
+    }
+}
