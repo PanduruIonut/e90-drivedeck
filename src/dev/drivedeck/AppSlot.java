@@ -3,6 +3,7 @@ package dev.drivedeck;
 import android.app.ActivityView;
 import android.content.Context;
 import android.content.Intent;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -121,7 +122,7 @@ final class AppSlot extends FrameLayout {
         if (!ready || (activityView == null && textureView == null)) return;
         try {
             if (textureView != null) {
-                textureView.launch(launch, pkg);
+                if (textureView.launch(launch, pkg)) startEscapeGuard();
             } else {
                 activityView.startActivity(new Intent(launch));
             }
@@ -136,6 +137,35 @@ final class AppSlot extends FrameLayout {
                 }
             });
         }
+    }
+
+    /**
+     * A cold-started app can open its next screen by itself, from a context with no display, and that
+     * lands on the main display over the dashboard (Waze: FreeMapAppActivity starts MainActivity ~6 s
+     * later; 3/3 on the emulator). For a while after starting an app, bring it back whenever it leaves,
+     * even while the dashboard is covered, since being covered is exactly what the escape causes.
+     */
+    private static final long ESCAPE_GUARD_MS = 20_000;
+    private long guardUntil;
+    private final Runnable escapeGuard = new Runnable() {
+        @Override
+        public void run() {
+            if (textureView == null || SystemClock.uptimeMillis() > guardUntil) return;
+            if (textureView.pullBack(pkg)) Log.i(MainActivity.TAG, pkg + ": left the slot on its own; brought back");
+            postDelayed(this, 1000);
+        }
+    };
+
+    private void startEscapeGuard() {
+        guardUntil = SystemClock.uptimeMillis() + ESCAPE_GUARD_MS;
+        removeCallbacks(escapeGuard);
+        postDelayed(escapeGuard, 1000);
+    }
+
+    /** The user is taking the app (or the screen) somewhere else: let it go. */
+    void stopEscapeGuard() {
+        guardUntil = 0;
+        removeCallbacks(escapeGuard);
     }
 
     /** Called when the dashboard comes back to the front, e.g. after the app was opened full screen. */
@@ -169,6 +199,7 @@ final class AppSlot extends FrameLayout {
     /** Opens the current app full screen. */
     void expand() {
         if (launch == null) return;
+        stopEscapeGuard();
         getContext().startActivity(new Intent(launch).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
     }
 
@@ -243,6 +274,7 @@ final class AppSlot extends FrameLayout {
     }
 
     void release() {
+        stopEscapeGuard();
         if (textureView != null) {
             textureView.release();
             removeView(textureView);

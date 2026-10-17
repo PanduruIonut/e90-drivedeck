@@ -96,8 +96,8 @@ public class MainActivity extends Activity {
         root.setPadding(0, gap, gap, gap);
 
         dock = new Dock(this, new Dock.Listener() {
-            @Override public void onHome() { openVendorLauncher(); }
-            @Override public void onApp(String pkg) { onDockApp(pkg); }
+            @Override public void onHome() { navSlot.stopEscapeGuard(); openVendorLauncher(); }
+            @Override public void onApp(String pkg) { navSlot.stopEscapeGuard(); onDockApp(pkg); }
         });
         root.addView(dock, new LinearLayout.LayoutParams(Ui.dp(this, 92), ViewGroup.LayoutParams.MATCH_PARENT));
 

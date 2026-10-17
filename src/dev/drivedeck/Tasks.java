@@ -15,9 +15,10 @@ import java.util.List;
 final class Tasks {
     private Tasks() {}
 
-    /** Returns how many of the app's stacks are now on this display (moved or already there); 0 if none. */
-    static int moveToDisplay(String pkg, int displayId) {
+    /** Puts all of the app's stacks on this display. Returns {stacks found, stacks that had to be moved}. */
+    static int[] moveToDisplay(String pkg, int displayId) {
         int found = 0;
+        int moved = 0;
         try {
             Class<?> am = Class.forName("android.app.ActivityManager");
             Object service = am.getMethod("getService").invoke(null);
@@ -32,6 +33,7 @@ final class Tasks {
                 found++;
                 if (stackDisplay != displayId) {
                     move.invoke(service, stackId, displayId);
+                    moved++;
                     Log.i(MainActivity.TAG, pkg + ": moved stack " + stackId + " from display "
                             + stackDisplay + " to " + displayId);
                 }
@@ -39,7 +41,7 @@ final class Tasks {
         } catch (Exception e) {
             Log.w(MainActivity.TAG, pkg + ": could not move its task to display " + displayId, e);
         }
-        return found;
+        return new int[] {found, moved};
     }
 
     /**

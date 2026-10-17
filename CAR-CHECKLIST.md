@@ -69,6 +69,13 @@
    găsită în harness, care putea să strice și rundele din mașină).
 3. **O singură instanță:** pornire din iconiță + Home → APK vechi: 3/3 cu două dashboard-uri; nou: 3/3 cu unul.
 
+4. **Waze pornit la rece ieșea din card.** Ecranul lui principal îl pornește Waze singur, fără display, și ajungea
+   pe tot ecranul peste DriveDeck: APK vechi 3/3. Acum slotul îl readuce timp de 20 s după pornire: 3/3 în card.
+   Dacă în timpul ăsta apeși Waze în dock, rămâne pe tot ecranul (2/2).
+5. **Cardul Viteză e acum „Afară”**: temperatura de la senzorul mașinii, citită din `forfan.user.info`, pe care o
+   scrie aplicația vendorului. La mașină, pasul `temp` o notează: trebuie să fie aceeași cifră ca în bara de sus a
+   navigației.
+
 Limită cunoscută: judecătorul măsoară doar acoperirea. Pe emulator, `texture_fix` dă PASS deși imaginea
 e întinsă, deci la mașină trebuie să ne uităm și la captură.
 

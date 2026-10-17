@@ -152,16 +152,32 @@ final class EmbeddedDisplayView extends TextureView implements TextureView.Surfa
      * of the main display, over DriveDeck ("bringingFoundTaskToFront returnToHome", 17 oct car
      * session; repro-return-home.sh). Only an app with no task is started. Moving such a task does
      * the same ("reparent adjustFocusToNextFocusableStack returnToHome"), so afterwards DriveDeck is
-     * put back on top of the main display if anything came over it.
+     * put back on top of the main display if anything came over it. Returns true if the app had no
+     * task and was started (a cold start).
      */
-    void launch(Intent launch, String pkg) {
+    boolean launch(Intent launch, String pkg) {
         int id = displayId();
-        if (id < 0) return;
-        if (Tasks.moveToDisplay(pkg, id) == 0) {
+        if (id < 0) return false;
+        boolean started = false;
+        if (Tasks.moveToDisplay(pkg, id)[0] == 0) {
             ActivityOptions opts = ActivityOptions.makeBasic();
             opts.setLaunchDisplayId(id);
             getContext().startActivity(new Intent(launch).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), opts.toBundle());
+            started = true;
         }
+        keepHostOnTop();
+        return started;
+    }
+
+    /** If the app has left this display, moves it back and puts DriveDeck on top again; true if it had. */
+    boolean pullBack(String pkg) {
+        int id = displayId();
+        if (id < 0 || Tasks.moveToDisplay(pkg, id)[1] == 0) return false;
+        keepHostOnTop();
+        return true;
+    }
+
+    private void keepHostOnTop() {
         if (getContext() instanceof Activity) {
             Tasks.keepOnTopOfMainDisplay(((Activity) getContext()).getTaskId(), getContext().getPackageName());
         }
