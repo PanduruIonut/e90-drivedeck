@@ -39,3 +39,18 @@
 | Scoți Aurora | `adb uninstall com.aurora.store` |
 | Animații / aplicații dezactivate pe 16 oct | `~/Documents/bmw-e90-navigatie/ANULARE.md` |
 | **La final** | Developer options → **USB debugging OFF** |
+
+## Deschis după sesiunea din 17 oct, 16:26
+
+- **Sesiunea `s-1017-162610` NU e valabilă.** `activityview`, `hwc_off` și `texture` au dat FAIL, dar
+  capturile arată ecranul principal al navigației, nu DriveDeck: judecătorul a măsurat ecranul greșit.
+  `texture_fix` (testul decisiv) n-a apucat să ruleze. vdfix e încă nedovedit pe navigație.
+- **Cauza, din log:** la revenirea în DriveDeck, slotul repornește aplicația care avea deja task
+  (Settings în test) → `am_focused_stack ... bringingFoundTaskToFront returnToHome` → launcher-ul
+  navigației (stack-ul home) ajunge peste DriveDeck. Pe emulator nu s-a văzut pentru că acolo DriveDeck
+  era Home. Probabil la fel cu Waze cât timp DriveDeck nu e Home implicit.
+- **De făcut acasă, înainte de mașină:**
+  1. slotul să nu mai trimită `startActivity` pentru un task existent, doar `moveToDisplay`; reprodus pe
+     emulator cu launcher-ul original ca Home (FAIL înainte, PASS după);
+  2. `car-verdict.sh`: dacă DriveDeck nu e în față la captură, pasul e INVALID, nu FAIL;
+  3. o singură instanță DriveDeck (launcher + Home creează două).
