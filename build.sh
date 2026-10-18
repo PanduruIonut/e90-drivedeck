@@ -6,8 +6,9 @@ cd "$(dirname "$0")"
 SDK=/opt/homebrew/share/android-commandlinetools
 BT=$SDK/build-tools/35.0.0
 AJ=$SDK/platforms/android-34/android.jar
-EXPECTED_SHA1="27196e386b875e76adf700e7ea84e4c6eee33dfa"   # this head unit's platform cert
+EXPECTED_SHA1="27196e386b875e76adf700e7ea84e4c6eee33dfa"   # AOSP test platform cert, as on the 825X_Pro
 
+./fetch-deps.sh
 rm -rf build && mkdir -p build/stubs build/classes build/dex build/gen/dev/drivedeck
 
 # Third-party jars packaged into the app: Spotify App Remote SDK (classes.jar of the AAR, which has

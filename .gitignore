@@ -6,3 +6,8 @@ thirdparty/*.apk
 spotify-client-id.txt
 libs/appremote/
 thirdparty/com.*/
+# Not published: downloaded by fetch-deps.sh, or personal session data from the car
+keys/
+libs/
+shots/
+design/

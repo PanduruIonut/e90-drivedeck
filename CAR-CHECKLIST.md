@@ -1,112 +1,114 @@
-# Sesiunea la mașină: listă de verificare
+# Car session checklist
 
-## Acasă, înainte
+## At home, before
 
-- [ ] **Cont Google pentru navigație.** Dacă ai YouTube Premium **Family**: fă un cont nou „mașină” și
-      adaugă-l în familie. Dacă ai Premium individual: decide dacă pui contul principal (cu 2FA activ).
-- [ ] Ai la îndemână login-ul **Spotify** (sau login cu telefonul).
-- [ ] Mac încărcat + încărcător, iPhone încărcat (hotspot-ul consumă).
+- [ ] **Google account for the head unit.** With YouTube Premium **Family**: make a separate "car" account
+      and add it to the family. With individual Premium: decide whether to use the main account (with 2FA).
+- [ ] Have the **Spotify** login at hand (or log in with the phone).
+- [ ] Laptop charged + charger, phone charged (the hotspot drains it).
 - [ ] iPhone → Personal Hotspot: **Maximize Compatibility ON**. **Low Power Mode OFF**.
-- [ ] Date mobile: Waze (~200 MB) + actualizări Google se descarcă prin hotspot.
+- [ ] Mobile data: Waze (~200 MB) and Google updates download over the hotspot.
 
-## La mașină
+## In the car
 
-1. **Motorul pornit** (sesiune de 30–45 min, bateria). Frână de mână, **nu** în marșarier.
-2. Navigație: Wi-Fi → hotspot-ul iPhone. **AutoLink oprit.** ADB pornit (Developer options).
-3. Mac pe hotspot → `./connect.sh` → scrie-mi „conectat”.
-4. Eu rulez `./car-verdict.sh` (reluabil: dacă pică Wi-Fi-ul → `./connect.sh` → din nou `./car-verdict.sh`):
-   - `activityview`: varianta veche, **trebuie să pice** (FAIL ~0,5). Dovedește că judecătorul vede problema;
-   - `hwc_off`: aceeași, cu compunerea hardware oprită. **PASS = cauza e compozitorul hardware**;
-   - `texture`: noua fereastră **fără** corecția vdfix, se așteaptă FAIL (~lățime/1920);
-   - `texture_fix`: **testul decisiv**, cu vdfix: trebuie PASS și imaginea nedeformată;
-   - `vdscale`: doar dacă ambele pică, încearcă alte dimensiuni ale ecranului virtual;
-   - `gps`: permisiunea de locație a Waze și ultimul fix GPS;
-   - verdictul complet e în `shots/<sesiune>/verdict.md`, cu capturi și dump-uri SurfaceFlinger.
-5. Cont Google pe navigație → **Play Store: Settings → Auto-update apps → Don't auto-update** →
-   instalează **Waze** → login **YouTube** (Premium).
-6. Pornește ceva în **Spotify** și în **YouTube** → verific ce primește cardul Now Playing.
-   Apoi atinge **coperta Spotify** în Now Playing → biblioteca se deschide peste hartă → prima dată
-   Spotify cere **autorizare** pentru DriveDeck (o singură dată) → alege un playlist.
-7. Apasă Home → **DriveDeck** → **„Always”**. Nu e opțional: dacă DriveDeck nu e aplicația Home, harta Waze
-   stă pe pauză ori de câte ori atingi dashboard-ul (vezi punctul 6 mai jos, 17 oct seara).
-8. Dacă se pierde conexiunea: reconectează Wi-Fi-ul navigației, rulează din nou `./connect.sh`
-   (descarcă jurnalul cu motivul deconectării).
+1. **Engine running** (a 30–45 min session drains the battery). Handbrake on, **not** in reverse.
+2. Head unit: Wi-Fi → the phone's hotspot. **AutoLink off.** ADB on (Developer options).
+3. Laptop on the hotspot → `./connect.sh`.
+4. `./car-verdict.sh --fresh` (resumable: if the Wi-Fi drops → `./connect.sh` → `./car-verdict.sh` again):
+   - `activityview`: the old variant, **must fail** (FAIL ~0.5). Shows that the judge sees the problem;
+   - `hwc_off`: the same with hardware composition off. **PASS = the hardware composer is the cause**;
+   - `texture`: the new embedder **without** the vdfix correction, expected to FAIL (~width/1920);
+   - `texture_fix`: **the decisive test**, with vdfix: must PASS and the capture must look undistorted;
+   - `vdscale`: only if both fail, tries other virtual display sizes;
+   - `fps`: frame rate of DriveDeck with Waze, scripted map swipes;
+   - `gps`: Waze's location permission and the last GPS fix;
+   - `temp`: the outside temperature property (must match the unit's status bar);
+   - the full verdict is in `shots/<session>/verdict.md`, with captures and SurfaceFlinger dumps.
+5. Google account on the unit → **Play Store: Settings → Auto-update apps → Don't auto-update** →
+   install **Waze** → log in to **YouTube** (Premium).
+6. Play something in **Spotify** and in **YouTube** → check what the Now Playing card receives.
+   Then tap the **Spotify cover** in Now Playing → the library opens over the map → the first time,
+   Spotify asks to **authorize** DriveDeck (once) → pick a playlist.
+7. Press Home → **DriveDeck** → **"Always"**. Not optional: if DriveDeck is not the Home app, the Waze map
+   pauses whenever you touch the dashboard (see point 6 under "Fixed at home" below).
+8. If the connection drops: reconnect the unit's Wi-Fi, run `./connect.sh` again (it fetches the log
+   with the reason for the drop).
 
-## Anulare
+## Undo
 
-| Ce | Comandă / unde |
+| What | Command / where |
 |---|---|
-| Scoți DriveDeck (Home revine la launcher-ul original) | `adb uninstall dev.drivedeck` |
-| Scoți Aurora | `adb uninstall com.aurora.store` |
-| Animații / aplicații dezactivate pe 16 oct | `~/Documents/bmw-e90-navigatie/ANULARE.md` |
-| **La final** | Developer options → **USB debugging OFF** |
+| Remove DriveDeck (Home goes back to the unit's launcher) | `adb uninstall dev.drivedeck` |
+| Remove Aurora | `adb uninstall com.aurora.store` |
+| Animations / packages disabled on 16 Oct | the author's own undo notes (not in this repository) |
+| **At the end** | Developer options → **USB debugging OFF** |
 
-## Deschis după sesiunea din 17 oct, 16:26
+## Open after the session of 17 Oct, 16:26
 
-- **Sesiunea `s-1017-162610` NU e valabilă.** `activityview`, `hwc_off` și `texture` au dat FAIL, dar
-  capturile arată ecranul principal al navigației, nu DriveDeck: judecătorul a măsurat ecranul greșit.
-  `texture_fix` (testul decisiv) n-a apucat să ruleze. vdfix e încă nedovedit pe navigație.
-- **Cauza, din log:** la revenirea în DriveDeck, slotul repornește aplicația care avea deja task
-  (Settings în test) → `am_focused_stack ... bringingFoundTaskToFront returnToHome` → launcher-ul
-  navigației (stack-ul home) ajunge peste DriveDeck. Pe emulator nu s-a văzut pentru că acolo DriveDeck
-  era Home. Probabil la fel cu Waze cât timp DriveDeck nu e Home implicit.
-- **De făcut acasă, înainte de mașină:**
-  1. slotul să nu mai trimită `startActivity` pentru un task existent, doar `moveToDisplay`; reprodus pe
-     emulator cu launcher-ul original ca Home (FAIL înainte, PASS după);
-  2. `car-verdict.sh`: dacă DriveDeck nu e în față la captură, pasul e INVALID, nu FAIL;
-  3. o singură instanță DriveDeck (launcher + Home creează două).
+- **Session `s-1017-162610` is NOT valid.** `activityview`, `hwc_off` and `texture` FAILED, but the
+  captures show the unit's home screen, not DriveDeck: the judge measured the wrong screen.
+  `texture_fix` (the decisive test) never ran. vdfix is still unproven on the unit.
+- **The cause, from the log:** coming back to DriveDeck, the slot restarted an app that already had a task
+  (Settings in the test) → `am_focused_stack ... bringingFoundTaskToFront returnToHome` → the unit's
+  launcher (the home stack) ends up over DriveDeck. The emulator did not show it because DriveDeck was the
+  Home app there. Probably the same with Waze while DriveDeck is not the default Home.
+- **To do at home, before the car:**
+  1. the slot must stop sending `startActivity` for an existing task, only `moveToDisplay`; reproduced on
+     the emulator with the stock launcher as Home (FAIL before, PASS after);
+  2. `car-verdict.sh`: if DriveDeck is not on top at capture time, the step is INVALID, not FAIL;
+  3. a single DriveDeck instance (launcher icon + Home create two).
 
-### Rezolvat acasă, 17 oct seara (verificat pe emulator, NU încă pe navigație)
+### Fixed at home, evening of 17 Oct (verified on the emulator, NOT yet on the unit)
 
-1. **Launcher-ul peste DriveDeck: reparat.** Mecanismul e confirmat: un task pornit cu
-   `NEW_TASK|TASK_ON_HOME` (cum pornește un launcher) aduce Home în față la orice `startActivity` sau
-   mutare a lui (`reparent ... returnToHome`). Slotul mută acum task-ul existent fără să-l repornească,
-   apoi pune DriveDeck înapoi deasupra dacă a apărut ceva peste el. `./repro-return-home.sh`, câte 6
-   runde: APK vechi + `FLAGS=0x10004000` **0/6**, APK nou **6/6**, iar controlul cu task obișnuit e 6/6 la ambele.
-   Dacă launcher-ul vendorului pune într-adevăr flag-ul ăsta se vede în `<pas>.activities.txt` (`flg=`).
-2. **`car-verdict.sh`: un pas cu DriveDeck acoperit iese INVALID și se reia la rularea următoare.**
-   Pe emulator, cu APK-ul vechi: 4/4 INVALID; cu cel nou: judecat normal. Tot acolo, după `force-stop` se
-   așteaptă dispariția display-ului vechi. Altfel aplicația din slot cade peste noul DriveDeck (o cursă
-   găsită în harness, care putea să strice și rundele din mașină).
-3. **O singură instanță:** pornire din iconiță + Home → APK vechi: 3/3 cu două dashboard-uri; nou: 3/3 cu unul.
+1. **The launcher over DriveDeck: fixed.** The mechanism is confirmed: a task started with
+   `NEW_TASK|TASK_ON_HOME` (the way a launcher starts apps) brings Home to the front on any `startActivity`
+   of it or move of it (`reparent ... returnToHome`). The slot now moves the existing task without
+   restarting it, then puts DriveDeck back on top if anything came over it. `./repro-return-home.sh`,
+   6 rounds each: old APK + `FLAGS=0x10004000` **0/6**, new APK **6/6**; the control with a plain task is
+   6/6 on both. Whether the unit's launcher really sets that flag shows in `<step>.activities.txt` (`flg=`).
+2. **`car-verdict.sh`: a step with DriveDeck covered is INVALID and is retried on the next run.**
+   On the emulator with the old APK: 4/4 INVALID; with the new one: judged normally. It also waits for the
+   old virtual display to go after `force-stop`. Otherwise the slot's app falls over the new DriveDeck (a
+   race found in the harness, which could have spoiled the car rounds too).
+3. **One instance:** start from the icon + Home → old APK: 3/3 with two dashboards; new: 3/3 with one.
+4. **Waze started cold left the card.** Waze opens its main screen by itself, with no display, and it
+   landed full screen over DriveDeck: old APK 3/3. Now the slot brings it back for 20 s after starting it:
+   3/3 in the card. Tapping Waze in the dock during that time leaves it full screen (2/2).
+5. **The Speed card is now "Outside"**: the car's outside sensor, read from `forfan.user.info`, which the
+   unit's own app writes. In the car, the `temp` step records it: it must be the same number as in the
+   unit's status bar.
+6. **The Waze map froze after any tap on the dashboard.** On Android 9 one activity is resumed at a time:
+   the tap gave the focus to DriveDeck, Waze was paused and its map stopped drawing. Old APK: 0 new map
+   frames with the car moving, 3/3 rounds. Now DriveDeck hands the focus back after 300 ms: 7/7 rounds with
+   a live map (44–97 frames), `./repro-map-pause.sh`. **Only with DriveDeck as Home:** otherwise, with a
+   Waze started from the unit's launcher, focusing Waze brings the launcher over the dashboard. DriveDeck
+   detects that and keeps the focus, so the map pauses. **Watch in the car:** on the emulator Waze now
+   crashes more often, because it draws more (the crash is in the emulator's GL). If it crashes often on
+   the unit too, the pause/resume on every tap is the suspect.
 
-4. **Waze pornit la rece ieșea din card.** Ecranul lui principal îl pornește Waze singur, fără display, și ajungea
-   pe tot ecranul peste DriveDeck: APK vechi 3/3. Acum slotul îl readuce timp de 20 s după pornire: 3/3 în card.
-   Dacă în timpul ăsta apeși Waze în dock, rămâne pe tot ecranul (2/2).
-5. **Cardul Viteză e acum „Afară”**: temperatura de la senzorul mașinii, citită din `forfan.user.info`, pe care o
-   scrie aplicația vendorului. La mașină, pasul `temp` o notează: trebuie să fie aceeași cifră ca în bara de sus a
-   navigației.
+Known limit: the judge measures coverage only. On the emulator, `texture_fix` PASSES although the image is
+stretched, so in the car look at the capture too.
 
-6. **Harta Waze îngheța după orice atingere pe dashboard.** În Android 9, o singură activitate e activă: atingerea
-   dădea focusul la DriveDeck, Waze intra pe pauză și harta nu mai desena. APK vechi: 0 cadre noi pe hartă cu mașina
-   în mișcare, 3/3 runde. Acum DriveDeck dă focusul înapoi după 300 ms: 7/7 runde cu hartă vie (44–97 de cadre),
-   `./repro-map-pause.sh`. **Merge doar cu DriveDeck ca Home:** altfel, la un Waze pornit din launcher-ul vendorului,
-   focusul dat lui Waze aduce launcher-ul peste dashboard. DriveDeck detectează asta și păstrează focusul, deci harta
-   stă pe pauză. **De urmărit la mașină:** pe emulator Waze crapă mai des acum, pentru că desenează mai mult
-   (crash-ul e în GL-ul emulatorului). Dacă și pe navigație crapă des, suspectul e pauza/reluarea la fiecare atingere.
+**Next session: `./car-verdict.sh --fresh`** (the old session has its `install` step marked done with the
+old APK).
 
-Limită cunoscută: judecătorul măsoară doar acoperirea. Pe emulator, `texture_fix` dă PASS deși imaginea
-e întinsă, deci la mașină trebuie să ne uităm și la captură.
+## DriveDeck vs CarPlay: which is faster (measured, not guessed)
 
-**Următoarea sesiune: `./car-verdict.sh --fresh`** (sesiunea veche are pasul `install` marcat cu APK-ul vechi).
+The same instrument for both: `fps-probe.sh` swipes the map the same way and reads from SurfaceFlinger
+when each frame was shown. DriveDeck is measured by `car-verdict.sh` itself (the `fps` step). CarPlay:
 
-## DriveDeck vs CarPlay: care e mai rapid (măsurat, nu estimat)
+1. Start CarPlay (**wired if possible**: wireless can take over the unit's Wi-Fi and ADB goes with it; the
+   probe keeps going regardless, the results are just collected later). Open **Waze in CarPlay**, on the
+   map, no route (as in DriveDeck).
+2. `./fps-probe.sh start carplay 60 20`: 20 s to get to the map, then 60 s of swipes. Do not touch the
+   screen meanwhile. The probe swipes only while CarPlay has the focus; otherwise it skips and logs it.
+3. When ADB is back: `./fps-probe.sh pull carplay`. Compare the CarPlay video layer with the DriveDeck
+   layer from the `fps` step.
 
-Același instrument pentru amândouă: `fps-probe.sh` glisează harta identic și citește din SurfaceFlinger
-momentul afișării fiecărui cadru. DriveDeck se măsoară singur, în `car-verdict.sh` (pasul `fps`). CarPlay:
+**Touch → response (slow-motion video).** iPhone: Camera → **Slo-mo 240 fps**, phone held still, the
+unit's screen and the finger in frame. With the Waze map open: **5 taps** on the search box ("Where to?"),
+with a pause between them. Once in DriveDeck, once in CarPlay. Count the frames between the touch and the
+first change on screen (1 frame = 4.2 ms), e.g. with `ffmpeg`.
 
-1. Pornește CarPlay (**cu cablu, dacă se poate**: wireless poate muta Wi-Fi-ul navigației și se pierde ADB-ul;
-   sonda merge mai departe oricum, doar rezultatele le iau mai târziu). Deschide **Waze în CarPlay**, pe hartă,
-   fără traseu (la fel ca în DriveDeck).
-2. Eu rulez `./fps-probe.sh start carplay 60 20`: ai 20 s să ajungi pe hartă, apoi 60 s de glisări.
-   Nu atinge ecranul în timpul ăsta. Sonda glisează doar când focusul e pe CarPlay, altfel sare și notează.
-3. Când ADB-ul e din nou disponibil: `./fps-probe.sh pull carplay`. Compar stratul video CarPlay cu stratul
-   DriveDeck din pasul `fps`.
-
-**Atingere → reacție (filmuleț slow-motion).** iPhone: Camera → **Slo-mo 240 fps**, telefonul fix, cu ecranul
-navigației și degetul în cadru. Cu harta Waze deschisă: **5 atingeri** pe butonul de căutare („Where to?”),
-cu o pauză între ele. O dată în DriveDeck, o dată în CarPlay. Trimite-mi clipurile pe Mac (AirDrop). Eu număr
-cadrele dintre atingere și prima schimbare pe ecran (1 cadru = 4,2 ms).
-
-**Contact → hartă utilizabilă.** Filmuleț normal, din momentul în care pui contactul până când harta Waze
-răspunde la atingere. O dată cu DriveDeck ca Home, o dată cu CarPlay.
+**Ignition → usable map.** A normal video, from turning the ignition on until the Waze map responds to a
+touch. Once with DriveDeck as Home, once with CarPlay.

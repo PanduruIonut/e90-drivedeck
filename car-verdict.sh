@@ -181,8 +181,8 @@ if step media "media sessions for Now Playing"; then
 fi
 
 # The vendor UI publishes the CAN outside temperature in forfan.user.info (CanFunc.UpdateOutTemp);
-# DriveDeck's "Afară" card reads it. Compare it with what the vendor status bar shows.
-if step temp "outside temperature (forfan.user.info, as the Afară card reads it)"; then
+# DriveDeck's "Outside" card reads it. Compare it with what the vendor status bar shows.
+if step temp "outside temperature (forfan.user.info, as the Outside card reads it)"; then
     t=$(adb -s "$D" shell getprop forfan.user.info </dev/null | tr -d '\r')
     record temp INFO "forfan.user.info='$t' — must match the vendor status bar; empty = no CAN reading yet"
 fi

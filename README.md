@@ -1,125 +1,127 @@
-# DriveDeck (E90 head unit)
+# DriveDeck
 
-Private. Home screen for the 825X_Pro head unit: speed + clock, **Waze embedded**, **Spotify embedded**.
-If embedding is not possible, each slot falls back to a card (Waze next-turn from its notification,
-Spotify now-playing from its media session).
+A CarPlay-style home screen for Android 9 head units, built for an **825X_Pro (AutoChips AC8257)** in a
+BMW E90. Real apps run *inside* the dashboard: the actual Waze map in the main card, not a picture of it.
 
-Embedding uses the hidden `android.app.ActivityView`, which needs signature permissions. The APK is
-signed with the **public AOSP test platform key** (`keys/`), which this unit's firmware also uses.
-That gives the app system-level permissions on the unit: keep it small and don't add networking.
-The app has no INTERNET permission.
+![DriveDeck on a 1280x480 head unit screen](docs/screenshot-dashboard.png)
+
+- **Dock:** clock, network, the unit's own launcher, Waze, and up to three music apps.
+- **Map card:** Waze, embedded and touchable.
+- **Now Playing:** Spotify, YouTube or YouTube Music, one at a time (picking one stops the other).
+  For Spotify, the cover opens a library over the map, through Spotify's official App Remote SDK.
+- **Outside:** the car's own outside-temperature sensor, read off CAN by the unit.
+- **Today:** the date.
+
+> **Do not operate it while driving.** Set things up while parked. This is a hobby project that runs
+> with system permissions on your car's head unit; use it at your own risk.
+
+## Status
+
+Honest version, as of 18 Oct 2026:
+
+- **On the head unit:** apps do run inside the dashboard's virtual displays. On the first run they were
+  drawn at about half width; the correction (`vdfix`, see below) is built and checked offline, **not yet on
+  the unit**. Neither are the fixes of 17 Oct (the dashboard getting covered, the map pausing).
+- **On an Android 9 emulator set up like the unit** (1280×480 panel, `wm size 1920x720`, density 240,
+  font scale 1.2), everything below works, and each fix has a script that fails without it.
+
+## Will it run on my unit?
+
+It needs a head unit whose firmware is signed with the public **AOSP test keys** and that supports
+activities on secondary displays:
+
+```sh
+adb shell getprop ro.build.tags                                  # test-keys
+adb shell pm list features | grep activities_on_secondary_displays
+```
+
+DriveDeck is signed with the same public test key, which gives it the signature permissions that
+embedding needs (`ACTIVITY_EMBEDDING`, `INTERNAL_SYSTEM_WINDOW`, `MANAGE_ACTIVITY_STACKS`,
+`INJECT_EVENTS`, ...). It has no `INTERNET` permission. The test key is not a secret (it ships with AOSP),
+which is exactly why such firmware should not be trusted with anything sensitive.
+
+Current Waze needs Android 10; on Android 9 use a 5.9.x build (5.9.5.4 works).
 
 ## Build
 
-```sh
-./build.sh        # -> build/drivedeck.apk, fails unless signed with cert SHA-1 27196e38…3dfa
-```
+Needs the Android command-line tools (the scripts expect Homebrew's, build-tools 35, platform 34) and a
+JDK. No Gradle.
 
-No Gradle: `aapt2`, `javac`, `d8`, `zipalign`, `apksigner` from the Homebrew Android SDK.
-`stubs/` holds a compile-only stub of `ActivityView`; it is never packaged.
+1. Create an app in the [Spotify developer dashboard](https://developer.spotify.com/dashboard): redirect URI
+   `drivedeck://spotify-auth`, Android package `dev.drivedeck`, and the SHA-1 of the AOSP test certificate,
+   `27:19:6E:38:6B:87:5E:76:AD:F7:00:E7:EA:84:E4:C6:EE:E3:3D:FA`. Put its client ID (32 hex characters)
+   in `spotify-client-id.txt`. No client secret is used.
+2. `./build.sh`. It first runs `fetch-deps.sh`, which downloads Gson, the Spotify App Remote SDK and the
+   AOSP test platform key, each checked against a pinned SHA-256, then checks the signing certificate of the
+   APK it produced.
 
-## Install on the head unit
+## Install
 
 ```sh
 adb connect <unit-ip>:5555
 adb install -r build/drivedeck.apk
-adb shell pm grant dev.drivedeck android.permission.ACCESS_FINE_LOCATION
-# Waze card (fallback) needs notification access:
 adb shell cmd notification allow_listener dev.drivedeck/dev.drivedeck.DeckNotificationListener
-adb shell am start -n dev.drivedeck/.MainActivity
-adb shell "logcat -d | grep DriveDeck"
 ```
 
-Test with other apps in the slots:
-`adb shell am start -n dev.drivedeck/.MainActivity --es left com.android.settings --es right com.android.deskclock`
+Then press Home, pick **DriveDeck** and **Always**. That is required, not cosmetic: see "One resumed
+activity" below. The dock's grid icon still opens the unit's own launcher.
 
-## Remove
+Remove: `adb uninstall dev.drivedeck` (Home goes back to the unit's launcher).
 
-```sh
-adb uninstall dev.drivedeck
-```
+## How it works
 
-## What the emulator showed (17 oct 2026, AOSP Android 9 arm64, test-keys, 1920×720)
+What makes embedding hard on this hardware, and what DriveDeck does about each:
 
-| Setup | Result |
+- **Embedding.** The stock hidden `ActivityView` drew apps at half width on the unit. DriveDeck creates its
+  own `VirtualDisplay`, renders it through a `TextureView` in its own window and forwards touches with the
+  hidden `InputManager.createInputForwarder` (`EmbeddedDisplayView`).
+- **Half width (`vdfix`).** On this unit each virtual display's image lands in a frame the size of the main
+  display (1920×720), and that whole frame is stretched into the view. DriveDeck scales the texture back by
+  1920/width and 720/height. On by default only on the `825X_Pro` model; `--ez vdfix true|false` overrides.
+- **The vendor launcher coming over the dashboard.** A task started by a launcher has
+  `NEW_TASK|TASK_ON_HOME`; Android 9 brings the Home stack to the front of the main display whenever such a
+  task is started again or moved. DriveDeck moves an app's existing task instead of starting it, and puts
+  itself back on top if anything came over it (`repro-return-home.sh`).
+- **Cold starts escaping.** Started from cold, Waze opens its main screen by itself, with no display, so it
+  lands full screen. For 20 s after starting an app, the slot brings it back whenever it leaves.
+- **One resumed activity.** Android 9 resumes one activity at a time. A tap on the dashboard gives it the
+  focus and pauses Waze, whose map then stops drawing (0 new frames while moving, `repro-map-pause.sh`).
+  DriveDeck hands the focus back to the embedded app 300 ms later. If DriveDeck is not the Home app, doing
+  that can bring the vendor launcher over the dashboard; DriveDeck detects it and keeps the focus instead,
+  and the map pauses whenever you touch the dashboard. Hence "Always".
+- **One dashboard.** Opening DriveDeck from its icon and then pressing Home creates a second instance
+  (Android never reuses a standard activity for a Home launch). The newer one closes the older once it has
+  the app in its slot.
+- **Outside temperature.** The unit's own UI reads it off CAN and publishes it, formatted, in the system
+  property `forfan.user.info` (the string its status bar shows). DriveDeck reads that property.
+- **Text size.** The unit runs `font_scale=1.2`; the dashboard's text is sized in dp so its fixed layout
+  does not clip. Embedded apps keep the system scale.
+
+## Testing
+
+Every fix above has a script that shows the failure on the old build and its absence on the new one:
+
+| Script | What it checks |
 |---|---|
-| signature permissions, no `INTERNAL_SYSTEM_WINDOW` | `SecurityException` in `SafeActivityOptions.checkPermissions` → fallback cards |
-| + `INTERNAL_SYSTEM_WINDOW` | launch allowed, but apps open **full screen on display 0** |
-| + `force_resizable_activities=1` (reboot) | still display 0 |
-| + feature `android.software.activities_on_secondary_displays` (emulator only, via root) | ✅ apps run **inside the slots** (displays #1/#2), touch works (`shots/emu-7-after-tap.png`) |
+| `car-verdict.sh` | Resumable session on the unit: embedding variants judged by `judge.py` from pixels, frame rate, temperature, media sessions. A capture where DriveDeck is not on top is INVALID, not FAIL. |
+| `judge.py` | Measures how much of the slot the embedded app covers in a screenshot. |
+| `repro-return-home.sh` | The vendor launcher must not end up over the dashboard. |
+| `repro-map-pause.sh` | The Waze map must keep drawing after a tap on the dashboard (emulator: `geo fix`). |
+| `fps-probe.sh`, `fps_stats.py` | Frame rate from SurfaceFlinger present times, the same way for DriveDeck and for CarPlay; runs detached on the unit. `fps_stats.py --selftest` checks the maths. |
+| `connect.sh` | Finds the unit on a phone hotspot and keeps a Wi-Fi log on it across drops. |
 
-**So on the head unit everything depends on one check:**
+`CAR-CHECKLIST.md` is the checklist for a session in the car, with the open questions and the evidence for
+each fix. `docs/JOURNAL.md` is the dated development log.
 
-```sh
-adb shell pm list features | grep activities_on_secondary_displays
-```
+## Related
 
-If it's there, embedding should work as on the emulator. If not, it can't be added without root (it's a
-file in `/system/etc/permissions`), and the slots stay on the fallback cards.
+[bmw-e90-android-headunit-825x](https://github.com/PanduruIonut/bmw-e90-android-headunit-825x): notes on this
+head unit itself (reverse camera wiring, the hidden factory menu and its codes).
 
-### Music tabs
+## License
 
-The music slot has tabs **Spotify · YouTube · YT Music** (`MusicPanel`). A tab switch launches that
-app into the same embedded display; switching back brings the earlier app's task to the front with its
-state kept (emulator: `shots/tabs-*.png`). The last tab is remembered. Tabs for apps that aren't installed
-are dimmed. Test with other apps: `--es right pkg1,pkg2,pkg3`.
+Apache-2.0, see `LICENSE`. Downloaded at build time, not in this repository: Gson and the Spotify App Remote
+SDK (both Apache-2.0) and the AOSP test platform key.
 
-### Single resumed activity
-
-Android 9 has one resumed activity system-wide: touching an embedded app pauses DriveDeck. GPS therefore
-runs from `onStart`/`onStop`. Emulator check: with Settings resumed inside the slot, GPS fixes still updated
-the speed view ("—" → "0 km/h"; the emulator doesn't pass the RMC speed field, so the value itself
-is checked in the car).
-
-## First run on the head unit (17 oct 2026, ~12:00)
-
-- ✅ `android.software.activities_on_secondary_displays` **is present** → embedding works on the unit
-  (YouTube and Settings ran inside the slots, on virtual displays #2/#3).
-- ❌ **Scaling:** the panel is **1280×480 physical** but the system runs with `wm size` override **1920×720**.
-  Virtual displays are created at the right logical size (971×690, 525×587), the app windows fill them,
-  yet on screen the embedded content shows at roughly half width (`shots/car-*.png`). Next: reproduce on
-  the emulator (AVD 1280×480 + `wm size 1920x720`), dump SurfaceFlinger layers, fix offline.
-- ❌ After DriveDeck restarts, an app whose task already lives on display 0 (YouTube) is not pulled back
-  into its slot. Next: stop the slot's app before the first embed, or move its task to the slot's display.
-- Apps: Aurora Store 4.8.4 (F-Droid, signature checked) installed via adb. **Spotify 9.1.92 installed**
-  through Aurora. **Waze: "App not supported" (v 0)**. Aurora kept the old anonymous auth
-  (`Saved AuthData is valid`) after switching the spoof to Pixel 9a → log out and log in again. Fallback:
-  the original Waze APK sideloaded.
-- DriveDeck build with "one music app at a time" (pause + force-stop on tab switch) is installed,
-  `FORCE_STOP_PACKAGES` granted. Not yet exercised on the unit.
-- Wi-Fi/ADB drops repeatedly, and the unit's IP changes between .2 and .8, so these are real reconnects.
-  Cause not identified yet (iPhone hotspot suspected). Read `wpa_supplicant` disconnect reasons right after a drop.
-- Play Store auto-updates Google apps (Maps, TTS) over the hotspot's mobile data.
-
-## After the first car run (17 oct 2026, afternoon, emulator only)
-
-- **Scaling bug does not reproduce on the emulator** with the unit's exact setup (AVD 1280×480 @240 +
-  `wm size 1920x720`): stock ActivityView fills its slots there. So the fault is in the unit's composition
-  (the vendor HWC handles the separate SurfaceView layer differently).
-- New default embedder: `EmbeddedDisplayView` (TextureView + our own `VirtualDisplay` + hidden
-  `InputManager.createInputForwarder`). The app's frames are drawn inside DriveDeck's own window, so the HWC
-  only sees one layer. On the emulator, the app fills the slot, touch works, and an app already running
-  full screen (Settings on display 0) ends up in its slot (display 3).
-  `--ez activityview true` brings back the stock ActivityView for an A/B on the unit; `car-test.sh` does both.
-- **Layout A built** (dock | Waze | Now Playing + speed + date), `shots/layout-a-3.png`. Music sources come
-  from the dock: picking one stops the previous app (one music app at a time).
-- Still to check in the car: does the TextureView embedder fix the half-width rendering? Quick diagnosis:
-  developer option "Disable HW overlays" with the stock ActivityView.
-
-### Home app + slot watchdog (17 oct 2026)
-
-- DriveDeck declares `category.HOME` (offered next to the unit's launcher; emulator: listed by
-  `cmd package query-activities -c android.intent.category.HOME`). The dock's ▦ opens the unit's own launcher
-  `com.android.launcher/com.android.launcher2.Launcher` (all apps, BMW menus).
-- Watchdog: while DriveDeck is visible, every 5 s, an empty slot display gets its app relaunched.
-  Emulator: force-stop the embedded app → 0 on the slot display immediately, back (2) 7 s later.
-  It stops while DriveDeck is hidden, so an app you opened full screen isn't pulled back.
-- `car-test.sh` also dumps media sessions (Now Playing) and greps props/settings for the outside temperature.
-
-## Not done yet
-
-- Not verified on the head unit (only on the Android 9 emulator, see above).
-- If the embedded app dies, its slot stays black. Needs a relaunch.
-- The ⤢ button overlaps the embedded app's top-right corner (e.g. a search icon).
-- Not the default home app yet (no HOME intent filter): start it by hand until embedding is proven in the car.
-- Map (MapLibre) and the 3D E90 model come after that.
+Not affiliated with Apple, BMW, Google, Spotify or Waze. CarPlay, Waze, Spotify, YouTube and BMW are
+trademarks of their owners.
